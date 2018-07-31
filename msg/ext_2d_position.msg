@@ -1,0 +1,6 @@
+float32 ext_pos_x
+float32 ext_pos_y
+float32 ext_pos_covar_00
+float32 ext_pos_covar_01
+float32 ext_pos_covar_10
+float32 ext_pos_covar_11

@@ -96,6 +96,14 @@
 #include "mavlink_main.h"
 #include "mavlink_command_sender.h"
 
+
+
+/* Hippo Campus External Localization System*/
+#include <uORB/topics/ext_2d_position.h>
+orb_advert_t _EXT_2d_position_topic;
+struct ext_2d_position_s ext_2d_position;
+
+
 using matrix::wrap_2pi;
 
 MavlinkReceiver::MavlinkReceiver(Mavlink *parent) :
@@ -909,6 +917,27 @@ MavlinkReceiver::handle_message_set_position_target_local_ned(mavlink_message_t 
 		bool is_idle_sp = (bool)(set_position_target_local_ned.type_mask & 0x4000);
 
 		offboard_control_mode.timestamp = hrt_absolute_time();
+
+                /*
+                 * Hi-jacked the set_position_target mavlink topic for in HippoCampus external Localization System
+                 */
+                        /*Set the absoilut ekf position values and the ekf covariance values */
+                        ext_2d_position.ext_pos_x = set_position_target_local_ned.x;
+                        ext_2d_position.ext_pos_y = set_position_target_local_ned.y;
+                        //set_position_target_local_ned.y; // dummy for the future
+                        ext_2d_position.ext_pos_covar_00 = set_position_target_local_ned.vx;
+                        ext_2d_position.ext_pos_covar_01 = set_position_target_local_ned.vy; // symmetry
+                        ext_2d_position.ext_pos_covar_10 = set_position_target_local_ned.vy; // symmetry
+                        ext_2d_position.ext_pos_covar_11 = set_position_target_local_ned.vz;
+
+                        /* Publishing of the external absolut position and the external EKF_covariance */
+                       if (_EXT_2d_position_topic != nullptr){
+                           orb_publish(ORB_ID(ext_2d_position), _EXT_2d_position_topic, &ext_2d_position);
+                       } else{
+                           _EXT_2d_position_topic = orb_advertise (ORB_ID(ext_2d_position), &ext_2d_position);
+                       }
+                       PX4_INFO("DEBUG ext_pose_topics\n");
+
 
 		if (_offboard_control_mode_pub == nullptr) {
 			_offboard_control_mode_pub = orb_advertise(ORB_ID(offboard_control_mode), &offboard_control_mode);

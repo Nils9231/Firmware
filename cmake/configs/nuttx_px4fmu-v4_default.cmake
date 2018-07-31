@@ -94,6 +94,8 @@ set(config_module_list
 	modules/position_estimator_inav
 	modules/wind_estimator
 
+	modules/ext_pose
+
 	#
 	# Vehicle Control
 	#
