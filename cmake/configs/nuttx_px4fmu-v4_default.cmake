@@ -20,6 +20,7 @@ set(config_module_list
 	drivers/gps
 	drivers/irlock
 	drivers/mkblctrl
+	drivers/ms5803
 	drivers/oreoled
 	drivers/pca9685
 	drivers/pwm_input
