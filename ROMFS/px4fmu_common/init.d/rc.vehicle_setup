@@ -167,6 +167,33 @@ then
 fi
 
 #
+# UUV setup - unmanned underwater vehicle
+#
+if [ $VEHICLE_TYPE == uuv ]
+then
+	if [ $MIXER == none ]
+	then
+		# Set default mixer for UUV if not defined
+		set MIXER uuv_quad
+	fi
+	if [ $MAV_TYPE == none ]
+	then
+		# Use MAV_TYPE = 3 (UUV) if not defined
+		set MAV_TYPE 3
+	fi
+
+	param set MAV_TYPE ${MAV_TYPE}
+
+	# Load mixer and configure outputs
+	sh /etc/init.d/rc.interface
+
+	# Start standard UUV apps
+	sh /etc/init.d/rc.uuv_apps
+fi
+
+
+
+#
 # Generic setup (autostart ID not found).
 #
 if [ $VEHICLE_TYPE == none ]

@@ -1,0 +1,16 @@
+#!nsh
+#
+# Standard apps for unmanned underwater vehicles (UGV)
+#
+
+#
+# Start the attitude and position estimator
+#
+
+# start driver pressure sensor
+ms5803 start
+
+#ekf2 start
+#uuv_att_control start
+ext_pose start
+logger start -t -r 100 -e -b 16

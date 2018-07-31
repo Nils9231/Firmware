@@ -100,6 +100,7 @@ px4_add_romfs_files(
 	50000_generic_ground_vehicle
 	50001_axialracing_ax10
 	50002_traxxas_stampede_2wd
+	60000_uuv_hippocampus
 	rc.axialracing_ax10_apps
 	rc.axialracing_ax10_defaults
 	rc.fw_apps
@@ -114,6 +115,8 @@ px4_add_romfs_files(
 	rc.thermal_cal
 	rc.ugv_apps
 	rc.ugv_defaults
+	rc.uuv_apps
+	rc.uuv_defaults
 	rc.vehicle_setup
 	rc.vtol_apps
 	rc.vtol_defaults

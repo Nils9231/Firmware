@@ -1,0 +1,37 @@
+
++#!nsh
++#
+# @name UUV Hippocampus
+#
+# @type UUV
+# @class UUV
+#
+# @output MAIN1 Roll
+# @output MAIN2 Pitch
+# @output MAIN3 Yaw
+# @output MAIN4 throttle
+#
+# @maintainer Daniel Duecker <daniel.duecker@tuhh.de>
+# @maintainer Nils Rottmann
+#
+
+sh /etc/init.d/rc.uuv_defaults
+
+if [ $AUTOCNF == yes ]
+then
+	param set EKF2_GBIAS_INIT 0.01
+	param set EKF2_ANGERR_INIT 0.01
+	param set EKF2_MAG_TYPE 1
+
+fi
+
+# Configure this as uuv
+set MAV_TYPE 3
+
+# Set mixer
+set MIXER uuv_quad
+
+# Provide ESC a constant 1500 us pulse
+set PWM_DISARMED 1500
+set PWM_MAX 2000
+set PWM_MIN 1000
