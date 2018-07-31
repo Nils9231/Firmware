@@ -105,6 +105,7 @@ set(config_module_list
 	modules/mc_pos_control
 	modules/vtol_att_control
 	modules/uuv_att_control
+	modules/uuv_simpos_control
 
 	#
 	# Logging
