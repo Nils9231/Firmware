@@ -131,7 +131,7 @@ int uuv_example_app_main(int argc, char *argv[])
         double Ldelr;               // Distance from Boat to target Point
 
         //Trajectory to plan:
-        matrix::Vector3d T(1,1,1);
+        matrix::Vector3d T(1,1,0);
         T(0)=T(0)/sqrt(pow(T(0),2)+pow(T(1),2)+pow(T(2),2));
         T(1)=T(1)/sqrt(pow(T(0),2)+pow(T(1),2)+pow(T(2),2));
         T(2)=T(2)/sqrt(pow(T(0),2)+pow(T(1),2)+pow(T(2),2));
@@ -213,7 +213,7 @@ int uuv_example_app_main(int argc, char *argv[])
 					 (double)y_B(1),
 					 (double)y_B(2));
 
-				PX4_INFO("z_B:\t%8.4f\t%8.4f\t%8.4f \n",
+                                PX4_INFO("z_B:\t%8.4f\t%8.4f\t%8.4f",
 					 (double)z_B(0),
 					 (double)z_B(1),
 					 (double)z_B(2));
@@ -227,7 +227,7 @@ int uuv_example_app_main(int argc, char *argv[])
                                 /* copy sensors raw data into local buffer */
                                 orb_copy(ORB_ID(att_pos_mocap), att_pos_mocap_sub_fd, &raw_position);
                                 // printing the sensor data into the terminal
-                                PX4_INFO("POS:\t%8.4f\t%8.4f\t%8.4f",
+                                PX4_INFO("POS:\t%8.4f\t%8.4f\t%8.4f \n",
                                          (double)raw_position.x,
                                          (double)raw_position.y,
                                          (double)raw_position.z);
