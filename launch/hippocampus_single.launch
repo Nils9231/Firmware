@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<launch>
+<!--
+    MAVROS posix SITL environment launch script modified for hippocam,pus from mavros_posix_sitl.
+    The HippoCampus is an autonomous underwater vehicle (AUV) designed by the Technical University Hamburg-Harburg.
+    https://www.tuhh.de/mum/forschung/forschungsgebiete-und-projekte/flow-field-estimation-with-a-swarm-of-auvs.html
+    -->
+
+    <!-- Posix SITL environment launch script -->
+    <!-- launchs PX4 SITL and spawns vehicle -->
+    <!-- vehicle pose -->
+    <arg name="x" default="0"/>
+    <arg name="y" default="0"/>
+    <arg name="z" default="0"/>
+    <arg name="R" default="0"/>
+    <arg name="P" default="0"/>
+    <arg name="Y" default="0"/>
+    <!-- vehcile model and config -->
+    <arg name="est" default="ekf2"/>
+    <arg name="vehicle" default="hippocampus"/>
+    <arg name="ID" default="1"/>
+    <arg name="world" default="/home/hippoc/src/Firmware/Tools/sitl_gazebo/worlds/hippocampus.world"/>
+    <arg name="rcS" default="$/home/hippoc/src/Firmware/posix-configs/SITL/init/$(arg est)/$(arg vehicle)_$(arg ID)"/>
+    <arg name="sdf" default="/home/hippoc/src/Firmware/Tools/sitl_gazebo/models/$(arg vehicle)/$(arg vehicle).sdf"/>
+    
+
+    <arg name="mavlink_udp_port" default="14560"/>
+    <!-- PX4 configs -->
+    <arg name="interactive" default="true"/>
+    <!-- PX4 SITL -->
+    <arg unless="$(arg interactive)" name="px4_command_arg1" value="-d"/>
+    <arg     if="$(arg interactive)" name="px4_command_arg1" value=""/>
+    <node name="sitl_$(arg ID)" pkg="px4" type="px4" output="screen" args="$(find px4) $(arg rcS) $(arg px4_command_arg1)"/>
+    <!-- spawn vehicle -->
+    <node name="($arg vehicle)_($arg ID)_spawn" output="screen" pkg="gazebo_ros" type="spawn_model" args="-sdf -file $(arg sdf) -model $(arg vehicle)_$(arg ID) -x $(arg x) -y $(arg y) -z $(arg z) -R $(arg R) -P $(arg P) -Y $(arg Y)"/>
+</launch>
