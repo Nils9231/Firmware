@@ -225,7 +225,7 @@ MultirotorMixer::mix(float *outputs, unsigned space)
 	}
 
 	// capture saturation
-	if (min_out < 0.0f) {
+        if (min_out < -1.0f) {
 		_saturation_status.flags.motor_neg = true;
 	}
 
@@ -245,7 +245,7 @@ MultirotorMixer::mix(float *outputs, unsigned space)
 			    (thrust + boost) * _rotors[i].thrust_scale;
 
 		// scale yaw if it violates limits. inform about yaw limit reached
-		if (out < 0.0f) {
+                if (out < -1.0f) {
 			if (fabsf(_rotors[i].yaw_scale) <= FLT_EPSILON) {
 				yaw = 0.0f;
 
@@ -305,7 +305,7 @@ MultirotorMixer::mix(float *outputs, unsigned space)
 		if (outputs[i] > 0.99f) {
 			clipping_high = true;
 
-		} else if (outputs[i] < _idle_speed + 0.01f) {
+                } else if (outputs[i] < _idle_speed -1 + 0.01f) {
 			clipping_low = true;
 
 		}

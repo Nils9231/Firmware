@@ -20,8 +20,8 @@
     <arg name="vehicle" default="hippocampus"/>
     <arg name="ID" default="1"/>
     <arg name="world" default="/home/hippoc/src/Firmware/Tools/sitl_gazebo/worlds/hippocampus.world"/>
-    <arg name="rcS" default="$/home/hippoc/src/Firmware/posix-configs/SITL/init/$(arg est)/$(arg vehicle)_$(arg ID)"/>
     <arg name="sdf" default="/home/hippoc/src/Firmware/Tools/sitl_gazebo/models/$(arg vehicle)/$(arg vehicle).sdf"/>
+    <arg name="rcS" default="/home/hippoc/src/Firmware/posix-configs/SITL/init/$(arg est)/$(arg vehicle)_$(arg ID)"/>
     
 
     <arg name="mavlink_udp_port" default="14560"/>
@@ -32,5 +32,5 @@
     <arg     if="$(arg interactive)" name="px4_command_arg1" value=""/>
     <node name="sitl_$(arg ID)" pkg="px4" type="px4" output="screen" args="$(find px4) $(arg rcS) $(arg px4_command_arg1)"/>
     <!-- spawn vehicle -->
-    <node name="($arg vehicle)_($arg ID)_spawn" output="screen" pkg="gazebo_ros" type="spawn_model" args="-sdf -file $(arg sdf) -model $(arg vehicle)_$(arg ID) -x $(arg x) -y $(arg y) -z $(arg z) -R $(arg R) -P $(arg P) -Y $(arg Y)"/>
+    <node name="$(arg vehicle)_$(arg ID)_spawn" output="screen" pkg="gazebo_ros" type="spawn_model" args="-sdf -file $(arg sdf) -model $(arg vehicle)_$(arg ID) -x $(arg x) -y $(arg y) -z $(arg z) -R $(arg R) -P $(arg P) -Y $(arg Y)"/>
 </launch>

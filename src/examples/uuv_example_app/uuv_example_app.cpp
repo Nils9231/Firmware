@@ -184,7 +184,7 @@ int uuv_example_app_main(int argc, char *argv[])
         home.manual_home = true;
         orb_publish(ORB_ID(home_position), home_pub, &home);
 */
-    for (int i = 0; i < 250; i++) {
+    for (int i = 0; i < 25; i++) {
                 // next step
                 dt0 = dt1;
                 e0=e1;
@@ -374,10 +374,10 @@ int uuv_example_app_main(int argc, char *argv[])
 
 
                 // Give actuator input to the HippoC
-                act.control[0] = roa;         // roll
-                act.control[1] = pa;           // pitch
-                act.control[2] = ya;           // yaw
-                act.control[3] = ta;		// thrust
+                act.control[0] = 1;//roa;         // roll
+                act.control[1] = 0;//pa;           // pitch
+                act.control[2] = 0;//ya;           // yaw
+                act.control[3] = 0;//ta;		// thrust
 		orb_publish(ORB_ID(actuator_controls_0), act_pub, &act);
 
 	}

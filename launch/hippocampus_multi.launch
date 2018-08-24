@@ -36,16 +36,16 @@
             <arg name="x" value="0"/>
             <arg name="y" value="0"/>
             <arg name="z" value="0"/>
-            <arg name="R" value="0"/>
+            <arg name="R" value="3.141592654"/>
             <arg name="P" value="0"/>
-            <arg name="Y" value="0"/>
+            <arg name="Y" value="1.570796327"/>
             <arg name="vehicle" value="$(arg vehicle)"/>
-            <arg name="rcS" value="$(find px4)/posix-configs/SITL/init/$(arg est)/$(arg vehicle)_$(arg ID)"/>
+            <arg name="rcS" value="/home/hippoc/src/Firmware/posix-configs/SITL/init/$(arg est)/$(arg vehicle)_$(arg ID)"/>
             <arg name="mavlink_udp_port" value="14560"/>
             <arg name="ID" value="$(arg ID)"/>
         </include>
         <!-- MAVROS -->
-        <include file="/home/hippoc/src/Firmware/launch/mavros.launch">
+        <include file="/home/hippoc/src/Firmware/launch/hippocampus_base.launch">
             <arg name="fcu_url" value="$(arg fcu_url)"/>
             <arg name="gcs_url" value=""/>
             <arg name="tgt_system" value="$(arg ID)"/>
@@ -62,16 +62,16 @@
             <arg name="x" value="1"/>
             <arg name="y" value="0"/>
             <arg name="z" value="0"/>
-            <arg name="R" value="0"/>
+            <arg name="R" value="3.141592654"/>
             <arg name="P" value="0"/>
-            <arg name="Y" value="0"/>
+            <arg name="Y" value="1.570796327"/>
             <arg name="vehicle" value="$(arg vehicle)"/>
-            <arg name="rcS" value="$(find px4)/posix-configs/SITL/init/$(arg est)/$(arg vehicle)_$(arg ID)"/>
+            <arg name="rcS" value="/home/hippoc/src/Firmware/posix-configs/SITL/init/$(arg est)/$(arg vehicle)_$(arg ID)"/>
             <arg name="mavlink_udp_port" value="14562"/>
             <arg name="ID" value="$(arg ID)"/>
         </include>
         <!-- MAVROS -->
-        <include file="/home/hippoc/src/Firmware/launch/mavros.launch">
+        <include file="/home/hippoc/src/Firmware/launch/hippocampus_base.launch">
             <arg name="fcu_url" value="$(arg fcu_url)"/>
             <arg name="gcs_url" value=""/>
             <arg name="tgt_system" value="$(arg ID)"/>

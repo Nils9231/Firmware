@@ -14,7 +14,7 @@ dataman start
 simulator start -s
 
 pwm_out_sim start
-mixer load /dev/pwm_output0 ROMFS/px4fmu_test/mixers/uuv_quad_x.mix
+mixer load /dev/pwm_output0 ROMFS/px4fmu_test/mixers/uuv_group_quad_x.mix
 
 gyrosim start
 accelsim start

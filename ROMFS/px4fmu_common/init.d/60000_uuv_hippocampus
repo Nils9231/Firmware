@@ -29,7 +29,7 @@ fi
 set MAV_TYPE 3
 
 # Set mixer
-set MIXER uuv_quad
+set MIXER uuv_group_quad
 
 # Provide ESC a constant 1500 us pulse
 set PWM_DISARMED 1500

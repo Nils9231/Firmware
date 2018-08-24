@@ -9,9 +9,9 @@
     <arg name="x" default="0"/>
     <arg name="y" default="0"/>
     <arg name="z" default="0"/>
-    <arg name="R" default="0"/>
-    <arg name="P" default="0"/>
-    <arg name="Y" default="0"/>
+    <arg name="R" value="3.141592654"/>
+    <arg name="P" value="0"/>
+    <arg name="Y" value="1.570796327"/>
 
 
     <arg name="est" default="ekf2"/>
