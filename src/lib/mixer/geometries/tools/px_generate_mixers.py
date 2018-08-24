@@ -198,11 +198,8 @@ def normalize_mix_px4_x(B):
         This is for compatibility only and should ideally not be used
         '''
         B_norm = np.linalg.norm(B, axis=0)
-        print(B_norm)
         B_max = np.abs(B).max(axis=0)
-        print(B_max)
         B_sum = np.sum(B, axis=0)
-        print(B_sum)
 
         # Same scale on yaw and pitch
         B_norm[1] = max(B_norm[1], B_norm[2]) / np.sqrt(B.shape[1] / 2.0)
@@ -213,7 +210,7 @@ def normalize_mix_px4_x(B):
 
         # Same scale on y, z
         B_norm[4] = max(B_max[4], B_max[5])
-        B_norm[5] = B_norm[4]
+        B_norm[5] = max(B_max[5], B_max[4])
 
         # Scale x thrust separately
         B_norm[3] = - B_sum[3] / np.count_nonzero(B[:, 3])
@@ -248,7 +245,9 @@ def normalize_mix_px4_z(B):
         B_norm[5] = - B_sum[5] / np.count_nonzero(B[:, 5])
 
         # Normalize
+        print(np.abs(B_norm))
         B_norm[np.abs(B_norm) < 1e-3] = 1
+
         B_px = (B / B_norm)
 
         return B_px
@@ -300,6 +299,7 @@ def generate_mixer_multirotor_header(geometries_list, use_normalized_mix=False, 
             else:
 
                 if np.array([rotor['axis'] for rotor in geometry['rotors']])[0] is [1.0, 0.0, 0.0]:
+                    #print(row[3])
                     buf.write(u"\t{{ {:9f}, {:9f}, {:9f}, {:9f} }},\n".format(
                         row[0], row[1], row[2],
                         row[3]))
@@ -380,14 +380,17 @@ if __name__ == '__main__':
         A, B = geometry_to_mix(geometry)
 
         # Normalize mixer
-        print(np.array([rotor['axis'] for rotor in geometry['rotors']])[0])
-        if np.array([rotor['axis'] for rotor in geometry['rotors']])[0] is [1.0,0.0,0.0]:
-            print('Moin')
+        axis = np.array([rotor['axis'] for rotor in geometry['rotors']])
+        print(axis)
+        print(axis[0])
+        if axis[0] is [1.0,0.0,0.0]:
+            print('HALLO \n')
             B_px = normalize_mix_px4_x(B)
         #if axis[0] is [0.0,0.0,-1.0]:
         else:
+            print('HALLi \n')
             B_px = normalize_mix_px4_z(B)
-        print(B_px)
+
         # Store matrices in geometry
         geometry['mix'] = {'A': A, 'B': B, 'B_px': B_px}
 
