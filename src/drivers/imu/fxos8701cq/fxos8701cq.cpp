@@ -307,20 +307,6 @@ private:
 	void			mag_measure();
 
 	/**
-	 * Accel self test
-	 *
-	 * @return 0 on success, 1 on failure
-	 */
-	int			accel_self_test();
-
-	/**
-	 * Mag self test
-	 *
-	 * @return 0 on success, 1 on failure
-	 */
-	int			mag_self_test();
-
-	/**
 	 * Read a register from the FXOS8701C
 	 *
 	 * @param		The register to read.
@@ -569,20 +555,33 @@ FXOS8701CQ::init()
 	/* do SPI init (and probe) first */
 	if (SPI::init() != OK) {
 		PX4_ERR("SPI init failed");
-		goto out;
+		return PX4_ERROR;
 	}
 
 	/* allocate basic report buffers */
 	_accel_reports = new ringbuffer::RingBuffer(2, sizeof(accel_report));
 
 	if (_accel_reports == nullptr) {
-		goto out;
+		return PX4_ERROR;
 	}
 
 	_mag_reports = new ringbuffer::RingBuffer(2, sizeof(mag_report));
 
 	if (_mag_reports == nullptr) {
-		goto out;
+		return PX4_ERROR;
+	}
+
+	// set software low pass filter for controllers
+	param_t accel_cut_ph = param_find("IMU_ACCEL_CUTOFF");
+	float accel_cut = FXOS8701C_ACCEL_DEFAULT_DRIVER_FILTER_FREQ;
+
+	if (accel_cut_ph != PARAM_INVALID && param_get(accel_cut_ph, &accel_cut) == PX4_OK) {
+		PX4_INFO("accel cutoff set to %.2f Hz", double(accel_cut));
+
+		accel_set_driver_lowpass_filter(FXOS8701C_ACCEL_DEFAULT_RATE, accel_cut);
+
+	} else {
+		PX4_ERR("IMU_ACCEL_CUTOFF param invalid");
 	}
 
 	reset();
@@ -592,7 +591,7 @@ FXOS8701CQ::init()
 
 	if (ret != OK) {
 		PX4_ERR("MAG init failed");
-		goto out;
+		return PX4_ERROR;
 	}
 
 	/* fill report structures */
@@ -608,6 +607,7 @@ FXOS8701CQ::init()
 
 	if (_mag->_mag_topic == nullptr) {
 		PX4_ERR("ADVERT ERR");
+		return PX4_ERROR;
 	}
 
 
@@ -623,10 +623,10 @@ FXOS8701CQ::init()
 
 	if (_accel_topic == nullptr) {
 		PX4_ERR("ADVERT ERR");
+		return PX4_ERROR;
 	}
 
-out:
-	return ret;
+	return PX4_OK;
 }
 
 
@@ -884,9 +884,6 @@ FXOS8701CQ::ioctl(struct file *filp, int cmd, unsigned long arg)
 		memcpy((struct accel_calibration_s *) arg, &_accel_scale, sizeof(_accel_scale));
 		return OK;
 
-	case ACCELIOCSELFTEST:
-		return accel_self_test();
-
 	default:
 		/* give it to the superclass */
 		return SPI::ioctl(filp, cmd, arg);
@@ -992,15 +989,6 @@ FXOS8701CQ::mag_ioctl(struct file *filp, int cmd, unsigned long arg)
 		memcpy((struct mag_calibration_s *) arg, &_mag_scale, sizeof(_mag_scale));
 		return OK;
 
-	case MAGIOCSRANGE:
-		return mag_set_range(arg);
-
-	case MAGIOCGRANGE:
-		return _mag_range_ga;
-
-	case MAGIOCSELFTEST:
-		return mag_self_test();
-
 	case MAGIOCGEXTERNAL:
 		/* Even if this sensor is on the "external" SPI bus
 		 * it is still fixed to the autopilot assembly,
@@ -1012,51 +1000,6 @@ FXOS8701CQ::mag_ioctl(struct file *filp, int cmd, unsigned long arg)
 		/* give it to the superclass */
 		return SPI::ioctl(filp, cmd, arg);
 	}
-}
-
-int
-FXOS8701CQ::accel_self_test()
-{
-	/*todo:Implement
-	 * set to 2 Jmode Save current samples
-	 *  Light bit and look for the offsets.
-	 * ±2 g mode, X-axis 	+192
-	 * ±2 g mode, Y-axis 	+270
-	 * ±2 g mode, Z-axis 	+1275
-	*/
-
-
-	if (_accel_read == 0) {
-		return 1;
-	}
-
-	return 0;
-}
-
-int
-FXOS8701CQ::mag_self_test()
-{
-	if (_mag_read == 0) {
-		return 1;
-	}
-
-	/**
-	 * inspect mag offsets
-	 * don't check mag scale because it seems this is calibrated on chip
-	 */
-	if (fabsf(_mag_scale.x_offset) < 0.000001f) {
-		return 1;
-	}
-
-	if (fabsf(_mag_scale.y_offset) < 0.000001f) {
-		return 1;
-	}
-
-	if (fabsf(_mag_scale.z_offset) < 0.000001f) {
-		return 1;
-	}
-
-	return 0;
 }
 
 uint8_t
