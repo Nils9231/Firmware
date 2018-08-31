@@ -245,7 +245,6 @@ def normalize_mix_px4_z(B):
         B_norm[5] = - B_sum[5] / np.count_nonzero(B[:, 5])
 
         # Normalize
-        print(np.abs(B_norm))
         B_norm[np.abs(B_norm) < 1e-3] = 1
 
         B_px = (B / B_norm)
@@ -298,12 +297,10 @@ def generate_mixer_multirotor_header(geometries_list, use_normalized_mix=False, 
                     row[3], row[4], row[5]))
             else:
 
-                if np.array([rotor['axis'] for rotor in geometry['rotors']])[0] is [1.0, 0.0, 0.0]:
-                    #print(row[3])
+                if np.array_equal(np.array([rotor['axis'] for rotor in geometry['rotors']])[0], [1.0, 0.0, 0.0]):
                     buf.write(u"\t{{ {:9f}, {:9f}, {:9f}, {:9f} }},\n".format(
                         row[0], row[1], row[2],
-                        row[3]))
-                # if axis[0] is [0.0,0.0,-1.0]:
+                        -row[3]))
                 else:
                     # 4dof mixer
                     buf.write(u"\t{{ {:9f}, {:9f}, {:9f}, {:9f} }},\n".format(
@@ -380,15 +377,9 @@ if __name__ == '__main__':
         A, B = geometry_to_mix(geometry)
 
         # Normalize mixer
-        axis = np.array([rotor['axis'] for rotor in geometry['rotors']])
-        print(axis)
-        print(axis[0])
-        if axis[0] is [1.0,0.0,0.0]:
-            print('HALLO \n')
+        if np.array_equal(np.array([rotor['axis'] for rotor in geometry['rotors']])[0],[1.0,0.0,0.0]):
             B_px = normalize_mix_px4_x(B)
-        #if axis[0] is [0.0,0.0,-1.0]:
         else:
-            print('HALLi \n')
             B_px = normalize_mix_px4_z(B)
 
         # Store matrices in geometry

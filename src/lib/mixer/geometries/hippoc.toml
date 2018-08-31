@@ -10,21 +10,21 @@ Ct        = 1.0
 Cm        = 0.05
 
 [[rotors]]
-name      = "up_left"
+name      = "up_left_1"
 position  = [-0.05, -0.0481, -0.0481]
 direction = "CW"
 
 [[rotors]]
-name      = "up_right"
+name      = "up_right_2"
 position  = [-0.05, 0.0481, -0.0481]
 direction = "CCW"
 
 [[rotors]]
-name      = "down_left"
-position  = [-0.05, -0.0481, 0.0481]
-direction = "CCW"
-
-[[rotors]]
-name      = "down_right"
+name      = "down_right_3"
 position  = [-0.05, 0.0481, 0.0481]
 direction = "CW"
+
+[[rotors]]
+name      = "down_left_4"
+position  = [-0.05, -0.0481, 0.0481]
+direction = "CCW"

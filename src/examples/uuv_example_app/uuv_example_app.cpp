@@ -154,7 +154,7 @@ int uuv_example_app_main(int argc, char *argv[])
         double Iro=0;               // integrated Error eta
 
         //Trajectory to plan:
-        matrix::Vector3d T(1,1,0);
+        matrix::Vector3<double> T(1,1,0);
         T(0)=T(0)/sqrt(pow(T(0),2)+pow(T(1),2)+pow(T(2),2));
         T(1)=T(1)/sqrt(pow(T(0),2)+pow(T(1),2)+pow(T(2),2));
         T(2)=T(2)/sqrt(pow(T(0),2)+pow(T(1),2)+pow(T(2),2));
@@ -162,19 +162,19 @@ int uuv_example_app_main(int argc, char *argv[])
         alpha=atan2(T(1),T(0));                                             // Angle between global X-Axis and Trajectory Projection in X-Y-Plane
         beta=atan2(T(2),sqrt(pow(T(0),2)+pow(T(1),2)));                     // Angle between global XY-Plane and Trajectory
 
-        matrix::Vector3d x_B(0, 0, 0);     // orientation body x-axis (in world coordinates)
-        matrix::Vector3d y_B(0, 0, 0);     // orientation body y-axis (in world coordinates)
-        matrix::Vector3d z_B(0, 0, 0);     // orientation body z-axis (in world coordinates)
+        matrix::Vector3<double> x_B(0, 0, 0);     // orientation body x-axis (in world coordinates)
+        matrix::Vector3<double> y_B(0, 0, 0);     // orientation body y-axis (in world coordinates)
+        matrix::Vector3<double> z_B(0, 0, 0);     // orientation body z-axis (in world coordinates)
 
-        matrix::Vector3d r(0, 0, 0);       // local position vector
+        matrix::Vector3<double> r(0, 0, 0);       // local position vector
 
-        matrix::Vector3d RT(0,0,0);        // nearest point on Tajectory in global coordinates
+        matrix::Vector3<double> RT(0,0,0);        // nearest point on Tajectory in global coordinates
 
-        matrix::Vector3d Rtarget(0,0,0);   // Target vector
+        matrix::Vector3<double> Rtarget(0,0,0);   // Target vector
 
-        matrix::Vector3d rctr(0,0,0);      // direction to Rtarget from boat in global coordinates
+        matrix::Vector3<double> rctr(0,0,0);      // direction to Rtarget from boat in global coordinates
 
-        matrix::Vector3d delr(0,0,0);      // controll help
+        matrix::Vector3<double> delr(0,0,0);      // controll help
 
 
 /*
@@ -312,6 +312,7 @@ int uuv_example_app_main(int argc, char *argv[])
                 theta_target = atan2(rctr(1),rctr(0));                              // angle between global X-Axis and rctr
                 phi_target = atan2(rctr(2),sqrt(pow(rctr(0),2)+pow(rctr(1),2)));    // angle betreen globar XY-Plane and rctr
 
+                /*
                 PX4_INFO("phi_act:\t%8.4f",
                          (double)phi_act);
                 PX4_INFO("phi_target:\t%8.4f",
@@ -320,7 +321,7 @@ int uuv_example_app_main(int argc, char *argv[])
                          (double)theta_act);
                 PX4_INFO("theta_target:\t%8.4f",
                          (double)theta_target);
-
+                */
                 // actual errors
                 e1 = sin(theta_target-theta_act);                                   // Yaw
                 f1 = sin(phi_target-phi_act);                                       // Pitc
@@ -374,10 +375,10 @@ int uuv_example_app_main(int argc, char *argv[])
 
 
                 // Give actuator input to the HippoC
-                act.control[0] = 1;//roa;         // roll
+                act.control[0] = 0;//roa;         // roll
                 act.control[1] = 0;//pa;           // pitch
                 act.control[2] = 0;//ya;           // yaw
-                act.control[3] = 0;//ta;		// thrust
+                act.control[3] = 0.01;//ta;		// thrust
 		orb_publish(ORB_ID(actuator_controls_0), act_pub, &act);
 
 	}

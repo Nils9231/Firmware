@@ -19,9 +19,9 @@
     <arg name="est" default="ekf2"/>
     <arg name="vehicle" default="hippocampus"/>
     <arg name="ID" default="1"/>
-    <arg name="world" default="/home/hippoc/src/Firmware/Tools/sitl_gazebo/worlds/hippocampus.world"/>
-    <arg name="sdf" default="/home/hippoc/src/Firmware/Tools/sitl_gazebo/models/$(arg vehicle)/$(arg vehicle).sdf"/>
-    <arg name="rcS" default="/home/hippoc/src/Firmware/posix-configs/SITL/init/$(arg est)/$(arg vehicle)_$(arg ID)"/>
+    <arg name="world" default="$(find mavlink_sitl_gazebo)/worlds/hippocampus.world"/>
+    <arg name="sdf" default="$(find mavlink_sitl_gazebo)/models/$(arg vehicle)/$(arg vehicle).sdf"/>
+    <arg name="rcS" default="$(find px4)/posix-configs/SITL/init/$(arg est)/$(arg vehicle)_$(arg ID)"/>
     
 
     <arg name="mavlink_udp_port" default="14560"/>

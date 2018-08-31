@@ -16,10 +16,12 @@
 
     <arg name="est" default="ekf2"/>
     <arg name="vehicle" default="hippocampus"/>
-    <arg name="world" default="/home/hippoc/src/Firmware/Tools/sitl_gazebo/worlds/hippocampus.world"/>
-    <arg name="sdf" default="/home/hippoc/src/Firmware/Tools/sitl_gazebo/models/$(arg vehicle)/$(arg vehicle).sdf"/>
+    <!--<arg name="world" default="$(find mavlink_sitl_gazebo)/worlds/hippocampus.world"/>-->
+    <arg name="world" default="/home/hippoc/src/sitl_gazebo/worlds/hippocampus.world"/>
+    <!--<arg name="sdf" default="$(find mavlink_sitl_gazebo)/models/$(arg vehicle)/$(arg vehicle).sdf"/>-->
+    <arg name="sdf" default="/home/hippoc/src/sitl_gazebo/models/$(arg vehicle)/$(arg vehicle).sdf"/>
 
-    <arg name="rcS" default="/home/hippoc/src/Firmware/posix-configs/SITL/init/$(arg est)/$(arg vehicle)"/>
+    <arg name="rcS" default="$(find px4)/posix-configs/SITL/init/$(arg est)/$(arg vehicle)"/>
 
     <arg name="headless" default="false"/>
     <arg name="gui" default="true"/>
@@ -30,7 +32,7 @@
     <arg name="verbose" default="false"/>
     <arg name="paused" default="false"/>
 
-    <include file="/home/hippoc/src/Firmware/launch/posix_sitl.launch">
+    <include file="$(find px4)/launch/posix_sitl.launch">
         <arg name="x" value="$(arg x)"/>
         <arg name="y" value="$(arg y)"/>
         <arg name="z" value="$(arg z)"/>
@@ -49,7 +51,7 @@
         <arg name="paused" value="$(arg paused)"/>
     </include>
 
-    <include file="/home/hippoc/src/Firmware/launch/mavros.launch">
+    <include file="$(find px4)/launch/mavros.launch">
         <arg name="ns" value="$(arg ns)"/>
         <arg name="gcs_url" value=""/> <!-- GCS link is provided by SITL -->
         <arg name="fcu_url" value="$(arg fcu_url)"/>
