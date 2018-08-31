@@ -38,6 +38,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <poll.h>
+#include <lib/cdev/CDev.hpp>
 
 ORB_DEFINE(orb_test, struct orb_test, sizeof(orb_test), "ORB_TEST:int val;hrt_abstime time;");
 ORB_DEFINE(orb_multitest, struct orb_test, sizeof(orb_test), "ORB_MULTITEST:int val;hrt_abstime time;");
@@ -139,7 +140,7 @@ int uORBTest::UnitTest::pubsublatency_main()
 
 	if (pubsubtest_print) {
 		char fname[32];
-		sprintf(fname, PX4_ROOTFSDIR"/fs/microsd/timings%u.txt", timingsgroup);
+		sprintf(fname, PX4_STORAGEDIR"/uorb_timings%u.txt", timingsgroup);
 		FILE *f = fopen(fname, "w");
 
 		if (f == nullptr) {
