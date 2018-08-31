@@ -2,6 +2,23 @@
 
 set VEHICLE_TYPE uuv
 
+if [ $AUTOCNF == yes ]
+then
+	param set NAV_ACC_RAD 2.0
+
+	param set RTL_RETURN_ALT 30.0
+	param set RTL_DESCEND_ALT 10.0
+	param set RTL_LAND_DELAY 0
+
+	param set PWM_MAX 1950
+	param set PWM_MIN 1075
+	param set PWM_RATE 400
+fi
+
+#
+# This is the gimbal pass mixer.
+#
+
 # Enable servo output on pins 3 and 4 (steering and thrust)
 # but also include 1+2 as they form together one output group
 # and need to be set together.

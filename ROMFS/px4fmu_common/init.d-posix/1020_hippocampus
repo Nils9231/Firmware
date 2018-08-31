@@ -3,8 +3,7 @@
 # @name Hippocampus UUV
 #
 
-sh /etc/init.d/rc.mc_defaults
+sh /etc/init.d/rc.uuv_defaults
 
-set MIXER uuv_quad_x
-
+set MIXER uuv_group_quad
 
