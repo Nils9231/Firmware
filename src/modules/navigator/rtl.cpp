@@ -69,11 +69,6 @@ RTL::on_activation()
 		// For safety reasons don't go into RTL if landed.
 		_rtl_state = RTL_STATE_LANDED;
 
-	} else if (_navigator->get_position_setpoint_triplet()->current.valid
-		   && _navigator->get_position_setpoint_triplet()->current.type == position_setpoint_s::SETPOINT_TYPE_LAND) {
-		// Skip straight to land if already performing a land.
-		_rtl_state = RTL_STATE_LAND;
-
 	} else if ((rtl_type() == RTL_LAND) && _navigator->on_mission_landing()) {
 		// RTL straight to RETURN state, but mission will takeover for landing.
 
@@ -155,7 +150,7 @@ RTL::set_rtl_item()
 			_mission_item.lon = gpos.lon;
 			_mission_item.altitude = return_alt;
 			_mission_item.altitude_is_relative = false;
-			_mission_item.yaw = NAN;
+			_mission_item.yaw = _navigator->get_local_position()->yaw;
 			_mission_item.acceptance_radius = _navigator->get_acceptance_radius();
 			_mission_item.time_inside = 0.0f;
 			_mission_item.autocontinue = true;
