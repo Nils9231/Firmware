@@ -65,6 +65,7 @@
 #include <uORB/topics/sensor_combined.h>                // this topics hold the acceleration data
 #include <uORB/topics/actuator_controls.h>              // this topic gives the actuators control input
 #include <uORB/topics/vehicle_attitude.h>                  // this topic holds the orientation of the hippocampus
+#include <uORB/topics/att_pos_mocap.h>
 
 extern "C" __EXPORT int uuv_example_app_main(int argc, char *argv[]);
 
@@ -94,9 +95,12 @@ int uuv_example_app_main(int argc, char *argv[])
 	fds[1].fd = vehicle_attitude_sub_fd;
 	fds[1].events = POLLIN;
 
+    //orb_publish_auto(ORB_ID(vehicle_vision_position), &_vision_position_pub, &vision_position, &inst, ORB_PRIO_DEFAULT);
+
+
 	int error_counter = 0;
 
-	for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < 40; i++) {
 		/* wait for sensor update of 1 file descriptor for 1000 ms (1 second) */
 		int poll_ret = px4_poll(fds, 1, 1000);
 
@@ -142,6 +146,7 @@ int uuv_example_app_main(int argc, char *argv[])
 				matrix::Vector3f y_B(R(0, 1), R(1, 1), R(2, 1));     // orientation body y-axis (in world coordinates)
 				matrix::Vector3f z_B(R(0, 2), R(1, 2), R(2, 2));     // orientation body z-axis (in world coordinates)
 
+                /*
 				PX4_INFO("x_B:\t%8.4f\t%8.4f\t%8.4f",
 					 (double)x_B(0),
 					 (double)x_B(1),
@@ -156,14 +161,52 @@ int uuv_example_app_main(int argc, char *argv[])
 					 (double)z_B(0),
 					 (double)z_B(1),
 					 (double)z_B(2));
+                */
 			}
 		}
 
 		// Give actuator input to the HippoC, this will result in a circle
-		act.control[0] = 0.0f;      // roll
-		act.control[1] = 0.0f;      // pitch
-		act.control[2] = 1.0f;		// yaw
-		act.control[3] = 1.0f;		// thrust
+
+        act.control[0] = 0.0f;      // roll
+        act.control[1] = 0.0f;      // pitch
+        act.control[2] = 0.0f;		// yaw
+        act.control[3] = 1.0f;		// thrust
+        /*
+        if (i < 10)
+        {
+            act.control[0] = 0.0f;      // roll
+            act.control[1] = 0.0f;      // pitch
+            act.control[2] = 0.0f;		// yaw
+            act.control[3] = 1.0f;		// thrust
+        }
+        else if (i>=10 && i<20)
+        {
+            act.control[0] = 0.0f;      // roll
+            act.control[1] = 0.0f;      // pitch
+            act.control[2] = 1.0f;		// yaw
+            act.control[3] = 0.0f;		// thrust
+        }
+        else if (i>=20 && i<30)
+        {
+            act.control[0] = 0.0f;      // roll
+            act.control[1] = 1.0f;      // pitch
+            act.control[2] = 0.0f;		// yaw
+            act.control[3] = 0.0f;		// thrust
+        }
+        else if (i>=30 && i<40)
+        {
+            act.control[0] = 1.0f;      // roll
+            act.control[1] = 0.0f;      // pitch
+            act.control[2] = 0.0f;		// yaw
+            act.control[3] = 0.0f;		// thrust
+        }
+        */
+        PX4_INFO("act:\t%8.4f\t%8.4f\t%8.4f\t%8.4f \n",
+             (double)act.control[0],
+             (double)act.control[1],
+             (double)act.control[2],
+             (double)act.control[3]);
+
 		orb_publish(ORB_ID(actuator_controls_0), act_pub, &act);
 
 	}

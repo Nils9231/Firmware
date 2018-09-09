@@ -126,6 +126,11 @@ set(config_module_list
 	# Rover apps
 	#
 	examples/rover_steering_control
+	
+	#
+	# HippoCampus example (AUV from TUHH)
+	#
+	examples/uuv_example_app
 
 	#
 	# Segway
@@ -150,4 +155,6 @@ set(config_module_list
 
 	# Hardware test
 	examples/hwtest
+
+
 )

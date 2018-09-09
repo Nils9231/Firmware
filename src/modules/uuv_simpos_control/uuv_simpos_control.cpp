@@ -89,6 +89,7 @@
 #include <uORB/topics/debug_value.h>
 #include <uORB/topics/debug_vect.h>
 #include <uORB/topics/sensor_combined.h>
+#include <uORB/topics/att_pos_mocap.h>
 
 using namespace matrix;
 
@@ -126,6 +127,7 @@ private:
 	int     yaw_drift_compensation_init;
 	int     weight_counter;
   //  int		_sensors_sub;
+    int att_pos_mocap_sub;
 
 	// topic publications
     orb_advert_t	_actuators_0_pub;		    // attitude actuator controls publication
@@ -146,6 +148,7 @@ private:
 	struct sensor_combined_s	        sensors;			    // sensors
 	struct actuator_outputs_s            _actuator_output;
 	struct pressure_s                   _press;
+    struct att_pos_mocap_s              _mocap_data;
 	// performance counters
 	perf_counter_t	_loop_perf;
 	perf_counter_t	_controller_latency_perf;
@@ -368,7 +371,7 @@ private:
 	// Check for parameter update and handle it.
 	void		parameter_update_poll();            // receives parameters
 
-	// Shim for calling task_main from task_create.
+    // Shim for calling task_main from task_create.
 	static void	task_main_trampoline(int argc, char *argv[]);
 
 	// Main attitude control task.
@@ -446,7 +449,7 @@ HippocampusPathControl::HippocampusPathControl(char *type_ctrl) :
 	_params.roll = 0.0f;
 	_params.pitch = 0.0f;
 	_params.yaw = 0.0f;
-	_params.WS_control = 0.0f;
+    _params.WS_control = 0.0f;
 	_params.no_back = 0.0f;
 	_params.pitch_cont = 0.0f;
 	_params.pitch_des_l = 0.0f;
@@ -914,7 +917,8 @@ void HippocampusPathControl::path_control(float dt)
 
 
 	// get trajectory setpoint data
-    Vector3f r_T(_v_traj_sp.x, _v_traj_sp.y, _v_traj_sp.z);                  // desired position
+    //Vector3f r_T(_v_traj_sp.x, _v_traj_sp.y, _v_traj_sp.z);                  // desired position
+    Vector3f r_T(10.0, 10.0, 0.0);                  // desired position
 
 	// desired force and outputs
     Vector3f F_des;
@@ -948,6 +952,14 @@ void HippocampusPathControl::path_control(float dt)
 //The actual controller as described in the master thesis "Position Estimation and Control of Autonomous Underwater Robots"
 
 if (!strcmp(type_array, "WS")) {
+/*
+    _pos_sp_triplet_pub = orb_advertise(ORB_ID(position_setpoint_triplet),
+                        &pos_sp_triplet);
+
+} else {
+    orb_publish(ORB_ID(position_setpoint_triplet), _pos_sp_triplet_pub,
+            &pos_sp_triplet);
+  */
 
 	    //YAW CONTROL
         float e_r_1;
@@ -1009,10 +1021,12 @@ if (!strcmp(type_array, "WS")) {
             _pressure_time_new = hrt_absolute_time();
 
             /* calculate actual water depth */
-            _depth = ( _pressure_new - _p_zero ) / ( _roh_g ); //unit meter
+            //_depth = ( _pressure_new - _p_zero ) / ( _roh_g ); //unit meter
 
+            /* -- just for sitl!! -- */
+            _depth = 0.5;
             _depth = _depth + x_B(2)*0.21f;
-        /*< PID-Controller for Pitch */
+            /*< PID-Controller for Pitch */
 
             /* Calculate measured pitch angle in degree */
             _pitch_angle_deg = euler.theta() * (180.0f/3.1416f);
@@ -1242,16 +1256,17 @@ if (!strcmp(type_array, "WS")) {
 
 		counter = counter + 5.0f;            // every 0.5 seconds
 
- /*       PX4_INFO("e_p:\t%8.2f\t%8.2f\t%8.2f",
+       PX4_INFO("pos_err:\t%8.2f\t%8.2f\t%8.2f",
 			 (double)e_p(0),
 			 (double)e_p(1),
 			 (double)e_p(2));
-*/
-PX4_INFO("e_p:\t%8.2f\t%8.2f\t%8.2f\t%8.2f",
+
+/*
+PX4_INFO("depth:\t%8.2f\t%8.2f\t%8.2f\t%8.2f",
 			 (double)_depth_err,
 			 (double)_depth,
 			 (double) _params.depth_sp,
-			 (double) abs(_depth_err));
+             (double) abs(_depth_err));*/
 	/*
 		PX4_INFO("e_v:\t%8.2f\t%8.2f\t%8.2f",
 			 (double)e_v(0),
@@ -1341,6 +1356,7 @@ void HippocampusPathControl::task_main()
 	_actuator_outputs_sub = orb_subscribe(ORB_ID(actuator_outputs));
 	int _sensors_sub = orb_subscribe(ORB_ID(sensor_combined));
 	_pressure_raw = orb_subscribe(ORB_ID(pressure));
+    att_pos_mocap_sub = orb_subscribe(ORB_ID(att_pos_mocap));
 
 	// initialize parameters cache
 	parameters_update();
@@ -1350,9 +1366,9 @@ void HippocampusPathControl::task_main()
 
 	fds[0].fd = _v_att_sub;
 	fds[0].events = POLLIN;
-
+    int i = 0;
 	while (!_task_should_exit) {
-
+    ++i;
 		// wait for up to 100ms for data, we try to poll the data
 		int pret = px4_poll(&fds[0], (sizeof(fds) / sizeof(fds[0])), 100);
 
@@ -1392,7 +1408,12 @@ void HippocampusPathControl::task_main()
             //sensor_combined_s sensors;
            // orb_copy(ORB_ID(sensor_combined), _sensor_combined_sub, &sensors);
             orb_copy(ORB_ID(sensor_combined), _sensors_sub, &sensors);
-
+            orb_copy(ORB_ID(att_pos_mocap), att_pos_mocap_sub, &_mocap_data);
+            //if (i<50)
+            //{
+                //PX4_INFO("moc_x:\t%8.4f, moc_y:\t%8.4f, moc_z:\t%8.4f", (double)_mocap_data.x,(double)_mocap_data.y,(double)_mocap_data.z);
+                //PX4_INFO("vis_x:\t%8.4f, vis_y:\t%8.4f, vis_z:\t%8.4f", (double)_v_pos.x,(double)_v_pos.y,(double)_v_pos.z);
+            //}
 			// do path control
             path_control(dt);
 
