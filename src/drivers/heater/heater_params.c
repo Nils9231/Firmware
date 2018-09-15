@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2015 Mark Charlebois. All rights reserved.
+ *   Copyright (c) 2018 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -32,74 +32,62 @@
  ****************************************************************************/
 
 /**
- * @file px4_posix_impl.cpp
+ * @file heater_params.c
+ * Heater parameters.
  *
- * PX4 Middleware Wrapper Linux Implementation
+ * @author Mark Sauder <mcsauder@gmail.com>
+ * @author Alex Klimaj <alexklimaj@gmail.com>
+ * @author Jake Dahl <dahl.jakejacob@gmail.com>
  */
 
-#include <px4_defines.h>
-#include <px4_middleware.h>
-#include <px4_workqueue.h>
-#include <px4_defines.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <signal.h>
-#include <errno.h>
-#include <unistd.h>
-#include <parameters/param.h>
-#include "hrt_work.h"
-#include <drivers/drv_hrt.h>
-#include "px4_time.h"
-#include <pthread.h>
+/**
+ * Target IMU device ID to regulate temperature.
+ *
+ * @group Sensors
+ */
+PARAM_DEFINE_INT32(SENS_TEMP_ID, 1442826);
 
-extern pthread_t _shell_task_id;
+/**
+ * Target IMU temperature.
+ *
+ * @group Sensors
+ * @unit C
+ * @min 0
+ * @max 85.0
+ * @decimal 3
+ */
+PARAM_DEFINE_FLOAT(SENS_IMU_TEMP, 55.0f);
 
-__BEGIN_DECLS
+/**
+ * IMU heater controller feedforward value.
+ *
+ * @group Sensors
+ * @unit microseconds
+ * @min 0
+ * @max 1.0
+ * @decimal 3
+ */
+PARAM_DEFINE_FLOAT(SENS_IMU_TEMP_FF, 0.5f);
 
-long PX4_TICKS_PER_SEC = sysconf(_SC_CLK_TCK);
+/**
+ * IMU heater controller integrator gain value.
+ *
+ * @group Sensors
+ * @unit microseconds/C
+ * @min 0
+ * @max 1.0
+ * @decimal 3
+ */
+PARAM_DEFINE_FLOAT(SENS_IMU_TEMP_I, 0.025f);
 
-__END_DECLS
 
-namespace px4
-{
-
-void init_once();
-
-void init_once()
-{
-	_shell_task_id = pthread_self();
-	//printf("[init] shell id: %lu\n", (unsigned long)_shell_task_id);
-	work_queues_init();
-	hrt_work_queue_init();
-	hrt_init();
-	param_init();
-}
-
-void init(int argc, char *argv[], const char *app_name)
-{
-	printf("\n");
-	printf("______  __   __    ___ \n");
-	printf("| ___ \\ \\ \\ / /   /   |\n");
-	printf("| |_/ /  \\ V /   / /| |\n");
-	printf("|  __/   /   \\  / /_| |\n");
-	printf("| |     / /^\\ \\ \\___  |\n");
-	printf("\\_|     \\/   \\/     |_/\n");
-	printf("\n");
-	printf("%s starting.\n", app_name);
-	printf("\n");
-
-	// set the threads name
-#ifdef __PX4_DARWIN
-	(void)pthread_setname_np(app_name);
-#else
-	(void)pthread_setname_np(pthread_self(), app_name);
-#endif
-}
-
-uint64_t get_time_micros()
-{
-	return hrt_absolute_time();
-}
-
-}
-
+/**
+ * IMU heater controller proportional gain value.
+ *
+ * @group Sensors
+ * @unit microseconds/C
+ * @min 0
+ * @max 1.0
+ * @decimal 3
+ */
+PARAM_DEFINE_FLOAT(SENS_IMU_TEMP_P, 0.25f);
