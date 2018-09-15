@@ -118,6 +118,9 @@ int uuv_example_app_main(int argc, char *argv[])
         fds[3].events = POLLIN;
 
 
+    //orb_publish_auto(ORB_ID(vehicle_vision_position), &_vision_position_pub, &vision_position, &inst, ORB_PRIO_DEFAULT);
+
+
 	int error_counter = 0;
         double phi_target;
         double phi_act;
@@ -191,7 +194,6 @@ int uuv_example_app_main(int argc, char *argv[])
                 f0=f1;
                 ro0=ro1;
 
-
 		/* wait for sensor update of 1 file descriptor for 1000 ms (1 second) */
 		int poll_ret = px4_poll(fds, 1, 1000);
 
@@ -243,6 +245,7 @@ int uuv_example_app_main(int argc, char *argv[])
                                 z_B(1)=R(0, 2);
                                 z_B(2)=-R(2, 2);     // orientation body z-axis (in world coordinates)
 
+
 				PX4_INFO("x_B:\t%8.4f\t%8.4f\t%8.4f",
 					 (double)x_B(0),
 					 (double)x_B(1),
@@ -257,6 +260,7 @@ int uuv_example_app_main(int argc, char *argv[])
 					 (double)z_B(0),
 					 (double)z_B(1),
 					 (double)z_B(2));
+
 
                                 /* obtained data for the third file descriptor */
                                 //struct vehicle_local_position_s raw_position;

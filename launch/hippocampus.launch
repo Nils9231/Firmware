@@ -9,6 +9,7 @@
     <arg name="x" default="0"/>
     <arg name="y" default="0"/>
     <arg name="z" default="0"/>
+<<<<<<< HEAD
     <arg name="R" value="3.141592654"/>
     <arg name="P" value="0"/>
     <arg name="Y" value="1.570796327"/>
@@ -22,6 +23,19 @@
     <arg name="sdf" default="/home/hippoc/src/sitl_gazebo/models/$(arg vehicle)/$(arg vehicle).sdf"/>
 
     <!--<arg name="rcS" default="$(find px4)/posix-configs/SITL/init/$(arg est)/$(arg vehicle)"/>-->
+=======
+    <arg name="R" default="0"/>
+    <arg name="P" default="0"/>
+    <arg name="Y" default="0"/>
+
+
+    <arg name="est" default="ekf2"/>
+    <arg name="vehicle" default="hippocampus"/>
+    <arg name="world" default="$(find px4)/Tools/sitl_gazebo/worlds/hippocampus.world"/>
+    <arg name="sdf" default="$(find px4)/Tools/sitl_gazebo/models/$(arg vehicle)/$(arg vehicle).sdf"/>
+
+    <arg name="rcS" default="$(find px4)/posix-configs/SITL/init/$(arg est)/$(arg vehicle)"/>
+>>>>>>> uuv_sitl
 
     <arg name="headless" default="false"/>
     <arg name="gui" default="true"/>
@@ -42,10 +56,10 @@
         <arg name="world" value="$(arg world)"/>
         <arg name="vehicle" value="$(arg vehicle)"/>
         <arg name="sdf" value="$(arg sdf)"/>
-       <!--<arg name="rcS" value="$(arg rcS)"/>-->
-       <!-- <arg name="headless" value="$(arg headless)"/> -->
+        <!--<arg name="rcS" value="$(arg rcS)"/>
+        <arg name="headless" value="$(arg headless)"/>-->
         <arg name="gui" value="$(arg gui)"/>
-       <!-- <arg name="ns" value="$(arg ns)"/> -->
+        <!--<arg name="ns" value="$(arg ns)"/>-->
         <arg name="debug" value="$(arg debug)"/>
         <arg name="verbose" value="$(arg verbose)"/>
         <arg name="paused" value="$(arg paused)"/>
@@ -57,5 +71,3 @@
         <arg name="fcu_url" value="$(arg fcu_url)"/>
     </include>
 </launch>
-
-<!-- vim: set et ft=xml fenc=utf-8 ff=unix sts=0 sw=4 ts=4 : -->
