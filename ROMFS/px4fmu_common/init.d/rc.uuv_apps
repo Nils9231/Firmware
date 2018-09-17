@@ -11,8 +11,8 @@
 #ms5803 start
 echo "start uuv apps"
 #ekf2 start
-local_position_estimator start
+#local_position_estimator start
 
 #uuv_att_control start
 #ext_pose start
-logger start -t -r 100 -e -b 16
+#logger start -t -r 100 -e -b 16
