@@ -178,8 +178,8 @@ then
 	fi
 	if [ $MAV_TYPE == none ]
 	then
-		# Use MAV_TYPE = 3 (UUV) if not defined
-		set MAV_TYPE 3
+		# Use MAV_TYPE = 2 (UUV) if not defined
+		set MAV_TYPE 2
 	fi
 
 	param set MAV_TYPE ${MAV_TYPE}

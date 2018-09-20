@@ -1199,6 +1199,11 @@ MavlinkReceiver::handle_message_local_position_ned_cov(mavlink_message_t *msg)
 	vision_position.y = pos.y;
 	vision_position.z = pos.z;
 
+        PX4_INFO("receive cov: %8.4f, %8.4f, %8.4f",
+                 (double) pos.x,
+                 (double) pos.y,
+                 (double) pos.z);
+
 	vision_position.vx = pos.vx;
 	vision_position.vy = pos.vy;
 	vision_position.vz = pos.vz;
@@ -1252,6 +1257,11 @@ MavlinkReceiver::handle_message_vision_position_estimate(mavlink_message_t *msg)
 	vision_position.x = pos.x;
 	vision_position.y = pos.y;
 	vision_position.z = pos.z;
+
+        PX4_INFO("receive vis: %8.4f, %8.4f, %8.4f",
+                 (double) pos.x,
+                 (double) pos.y,
+                 (double) pos.z);
 
 	vision_position.xy_valid = true;
 	vision_position.z_valid = true;
