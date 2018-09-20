@@ -101,8 +101,6 @@ px4_add_romfs_files(
 	50001_axialracing_ax10
 	50002_traxxas_stampede_2wd
 	60000_uuv_hippocampus
-	rc.axialracing_ax10_apps
-	rc.axialracing_ax10_defaults
 	rc.fw_apps
 	rc.fw_defaults
 	rc.interface
