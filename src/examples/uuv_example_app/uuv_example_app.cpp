@@ -67,7 +67,7 @@
 #include <uORB/topics/actuator_controls.h>              // this topic gives the actuators control input
 #include <uORB/topics/vehicle_attitude.h>               // this topic holds the orientation of the hippocampus
 #include <uORB/topics/vehicle_local_position.h>         // this topic holds all position and speed information
-#include <uORB/topics/att_pos_mocap.h>                  // this topic holds all position information
+//#include <uORB/topics/att_pos_mocap.h>                  // this topic holds all position information
 #include <uORB/topics/home_position.h>                  // this topic defines the home_position
 extern "C" __EXPORT int uuv_example_app_main(int argc, char *argv[]);
 
@@ -91,9 +91,9 @@ int uuv_example_app_main(int argc, char *argv[])
         orb_set_interval(vehicle_local_position_sub_fd, 200);
 
         /* subscribe to localization topic */
-        int att_pos_mocap_sub_fd = orb_subscribe(ORB_ID(att_pos_mocap));
+       // int att_pos_mocap_sub_fd = orb_subscribe(ORB_ID(att_pos_mocap));
         /* limit the update rate to 5 Hz */
-        orb_set_interval(att_pos_mocap_sub_fd, 200);
+       // orb_set_interval(att_pos_mocap_sub_fd, 200);
 
         /* advertise to actuator_control topic */
         struct actuator_controls_s act;
@@ -114,7 +114,7 @@ int uuv_example_app_main(int argc, char *argv[])
 	fds[1].events = POLLIN;
         fds[2].fd = vehicle_local_position_sub_fd;
         fds[2].events = POLLIN;
-        fds[3].fd = att_pos_mocap_sub_fd;
+        //fds[3].fd = att_pos_mocap_sub_fd;
         fds[3].events = POLLIN;
 
 
@@ -263,18 +263,18 @@ int uuv_example_app_main(int argc, char *argv[])
 
 
                                 /* obtained data for the third file descriptor */
-                                //struct vehicle_local_position_s raw_position;
+                                struct vehicle_local_position_s raw_position;
                                 /* copy sensors raw data into local buffer */
-                                //orb_copy(ORB_ID(vehicle_local_position), vehicle_local_position_sub_fd, &raw_position);
+                                orb_copy(ORB_ID(vehicle_local_position), vehicle_local_position_sub_fd, &raw_position);
                                 /* obtained data for the third file descriptor */
-                                struct att_pos_mocap_s raw_position;
+                               // struct att_pos_mocap_s raw_position;
                                 /* copy sensors raw data into local buffer */
-                                orb_copy(ORB_ID(att_pos_mocap), att_pos_mocap_sub_fd, &raw_position);
+                               // orb_copy(ORB_ID(att_pos_mocap), att_pos_mocap_sub_fd, &raw_position);
                                 // Coordinate Transformation to Gazebo coordinates.
                                 r(0)=raw_position.y;
                                 r(1)=raw_position.x;
                                 r(2)=-raw_position.z;
-                                dt1=(double)raw_position.timestamp_received/(double)1000000; // actual steptime
+                                //dt1=(double)raw_position.timestamp_received/(double)1000000; // actual steptime
                                 if(i==0){
                                     dt0=dt1;
                                 }

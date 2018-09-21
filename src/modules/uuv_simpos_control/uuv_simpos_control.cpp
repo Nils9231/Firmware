@@ -89,7 +89,7 @@
 #include <uORB/topics/debug_value.h>
 #include <uORB/topics/debug_vect.h>
 #include <uORB/topics/sensor_combined.h>
-#include <uORB/topics/att_pos_mocap.h>
+//#include <uORB/topics/att_pos_mocap.h>
 
 using namespace matrix;
 
@@ -127,7 +127,7 @@ private:
 	int     yaw_drift_compensation_init;
 	int     weight_counter;
   //  int		_sensors_sub;
-    int att_pos_mocap_sub;
+   // int att_pos_mocap_sub;
 
 	// topic publications
     orb_advert_t	_actuators_0_pub;		    // attitude actuator controls publication
@@ -148,7 +148,7 @@ private:
 	struct sensor_combined_s	        sensors;			    // sensors
 	struct actuator_outputs_s            _actuator_output;
 	struct pressure_s                   _press;
-    struct att_pos_mocap_s              _mocap_data;
+ //   struct att_pos_mocap_s              _mocap_data;
 	// performance counters
 	perf_counter_t	_loop_perf;
 	perf_counter_t	_controller_latency_perf;
@@ -1356,7 +1356,7 @@ void HippocampusPathControl::task_main()
 	_actuator_outputs_sub = orb_subscribe(ORB_ID(actuator_outputs));
 	int _sensors_sub = orb_subscribe(ORB_ID(sensor_combined));
 	_pressure_raw = orb_subscribe(ORB_ID(pressure));
-    att_pos_mocap_sub = orb_subscribe(ORB_ID(att_pos_mocap));
+    //att_pos_mocap_sub = orb_subscribe(ORB_ID(att_pos_mocap));
 
 	// initialize parameters cache
 	parameters_update();
@@ -1408,7 +1408,7 @@ void HippocampusPathControl::task_main()
             //sensor_combined_s sensors;
            // orb_copy(ORB_ID(sensor_combined), _sensor_combined_sub, &sensors);
             orb_copy(ORB_ID(sensor_combined), _sensors_sub, &sensors);
-            orb_copy(ORB_ID(att_pos_mocap), att_pos_mocap_sub, &_mocap_data);
+          //  orb_copy(ORB_ID(att_pos_mocap), att_pos_mocap_sub, &_mocap_data);
             //if (i<50)
             //{
                 //PX4_INFO("moc_x:\t%8.4f, moc_y:\t%8.4f, moc_z:\t%8.4f", (double)_mocap_data.x,(double)_mocap_data.y,(double)_mocap_data.z);
