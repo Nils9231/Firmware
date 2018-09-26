@@ -1196,6 +1196,11 @@ MavlinkReceiver::handle_message_vision_position_estimate(mavlink_message_t *msg)
 	matrix::Quatf q(matrix::Eulerf(ev.roll, ev.pitch, ev.yaw));
 	q.copyTo(visual_odom.q);
 
+        PX4_INFO("visual_odom:\t%8.4f\t%8.4f\t%8.4f",
+                 (double)visual_odom.x,
+                 (double)visual_odom.y,
+                 (double)visual_odom.z);
+
 	// TODO:
 	// - add a MAV_FRAME_*_OTHER to the Mavlink MAV_FRAME enum IOT define
 	// a frame of reference which is not aligned with NED or ENU
