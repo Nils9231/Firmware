@@ -7,5 +7,5 @@ export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:/home/hippoc/src/sitl_gazebo
 #export PX4_HOME_LON=-13.867138
 #export PX4_HOME_ALT=28.5
 
-roslaunch px4 multi_hippocampus.launch
+roslaunch px4 second_hippocampus.launch
 

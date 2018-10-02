@@ -157,6 +157,7 @@ def thrust_matrix(axis, Ct):
     '''
     # Normalize rotor axis
     ax = axis / np.linalg.norm(axis, axis=1)[:, np.newaxis]
+    print(ax)
     thrust = Ct * ax
     return thrust
 
@@ -169,7 +170,6 @@ def geometry_to_thrust_matrix(geometry):
     '''
     At = thrust_matrix(axis=np.array([rotor['axis'] for rotor in geometry['rotors']]),
                        Ct=np.array([[rotor['Ct']] for rotor in geometry['rotors']])).T
-
     return At
 
 
@@ -189,7 +189,6 @@ def geometry_to_mix(geometry):
     A = np.vstack([Am, At])
     # Mix matrix computed as pseudoinverse of A
     B = np.linalg.pinv(A)
-
     return A, B
 
 def normalize_mix_px4_x(B):
@@ -213,12 +212,12 @@ def normalize_mix_px4_x(B):
         B_norm[5] = max(B_max[5], B_max[4])
 
         # Scale x thrust separately
-        B_norm[3] = - B_sum[3] / np.count_nonzero(B[:, 3])
+        B_norm[3] =  B_sum[3] / np.count_nonzero(B[:, 3])
 
         # Normalize
         B_norm[np.abs(B_norm) < 1e-3] = 1
         B_px = (B / B_norm)
-
+	print(B_px)
         return B_px
 
 def normalize_mix_px4_z(B):
@@ -300,7 +299,7 @@ def generate_mixer_multirotor_header(geometries_list, use_normalized_mix=False, 
                 if np.array_equal(np.array([rotor['axis'] for rotor in geometry['rotors']])[0], [1.0, 0.0, 0.0]):
                     buf.write(u"\t{{ {:9f}, {:9f}, {:9f}, {:9f} }},\n".format(
                         row[0], row[1], row[2],
-                        -row[3]))
+                        row[3]))
                 else:
                     # 4dof mixer
                     buf.write(u"\t{{ {:9f}, {:9f}, {:9f}, {:9f} }},\n".format(

@@ -11,9 +11,9 @@
     <arg name="Y" default="1.570796327"/>
     <!-- vehicle model and world -->
     <arg name="est" default="ekf2"/>
-    <arg name="vehicle" default="hippocampus"/>
-    <arg name="world" default="$(find mavlink_sitl_gazebo)/worlds/hippocampus.world"/>
-    <arg name="sdf" default="$(find mavlink_sitl_gazebo)/models/$(arg vehicle)/$(arg vehicle).sdf"/>
+    <arg name="vehicle" default="hippocampus_vision"/>
+    <arg name="world" default="/home/hippoc/src/sitl_gazebo/worlds/hippocampus_vision.world"/>
+    <arg name="sdf" default="/home/hippoc/src/sitl_gazebo/models/$(arg vehicle)/$(arg vehicle).sdf"/>
 
     <!-- added for mavros node launch-->
     <arg name="gcs_url" default="" />
