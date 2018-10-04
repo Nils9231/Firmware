@@ -1,4 +1,4 @@
-﻿/****************************************************************************
+/****************************************************************************
  *
  *   Copyright (c) 2012-2016 PX4 Development Team. All rights reserved.
  *
@@ -32,13 +32,10 @@
  ****************************************************************************/
 
 /**
- * @file uuv_example_app.cpp
+ * @file uuv_follower_app.cpp
  *
- * This file let the hippocampus drive in a circle and prints the orientation as well as the acceleration data.
- * The HippoCampus is an autonomous underwater vehicle (AUV) designed by the Technical University Hamburg-Harburg (TUHH).
- * https://www.tuhh.de/mum/forschung/forschungsgebiete-und-projekte/flow-field-estimation-with-a-swarm-of-auvs.html
  *
- * @author Nils Rottann <Nils.Rottmann@tuhh.de>, Nils Timmermann <Nils.Timmermann@tuhh.de>
+ * @author Nils Timmermann <Nils.Timmermann@tuhh.de>
  *
  */
 
@@ -67,23 +64,23 @@
 #include <uORB/topics/actuator_controls.h>              // this topic gives the actuators control input
 #include <uORB/topics/vehicle_attitude.h>               // this topic holds the orientation of the hippocampus
 #include <uORB/topics/vehicle_local_position.h>         // this topic holds all position and speed information
-//#include <uORB/topics/att_pos_mocap.h>                  // this topic holds all position information
+//#include <uORB/topics/att_pos_mocap.h>                // this topic holds all position information
 #include <uORB/topics/home_position.h>                  // this topic defines the home_position
-extern "C" __EXPORT int uuv_example_app_main(int argc, char *argv[]);
+extern "C" __EXPORT int uuv_follower_app_main(int argc, char *argv[]);
 
-int uuv_example_app_main(int argc, char *argv[])
+int uuv_follower_app_main(int argc, char *argv[])
 {
-	PX4_INFO("auv_hippocampus_example_app has been started!");
+        PX4_INFO("auv_hippocampus_follower_app has been started!");
 
-	/* subscribe to sensor_combined topic */
-	int sensor_sub_fd = orb_subscribe(ORB_ID(sensor_combined));
-	/* limit the update rate to 5 Hz */
-	orb_set_interval(sensor_sub_fd, 200);
+        /* subscribe to sensor_combined topic */
+        int sensor_sub_fd = orb_subscribe(ORB_ID(sensor_combined));
+        /* limit the update rate to 5 Hz */
+        orb_set_interval(sensor_sub_fd, 200);
 
-	/* subscribe to control_state topic */
-	int vehicle_attitude_sub_fd = orb_subscribe(ORB_ID(vehicle_attitude));
-	/* limit the update rate to 5 Hz */
-	orb_set_interval(vehicle_attitude_sub_fd, 200);
+        /* subscribe to control_state topic */
+        int vehicle_attitude_sub_fd = orb_subscribe(ORB_ID(vehicle_attitude));
+        /* limit the update rate to 5 Hz */
+        orb_set_interval(vehicle_attitude_sub_fd, 200);
 
         /* subscribe to localization topic */
         int vehicle_local_position_sub_fd = orb_subscribe(ORB_ID(vehicle_local_position));
@@ -97,8 +94,8 @@ int uuv_example_app_main(int argc, char *argv[])
 
         /* advertise to actuator_control topic */
         struct actuator_controls_s act;
-	memset(&act, 0, sizeof(act));
-	orb_advert_t act_pub = orb_advertise(ORB_ID(actuator_controls_0), &act);
+        memset(&act, 0, sizeof(act));
+        orb_advert_t act_pub = orb_advertise(ORB_ID(actuator_controls_0), &act);
 
         /* advertise to home_position topic */
 /*
@@ -106,12 +103,12 @@ int uuv_example_app_main(int argc, char *argv[])
         memset(&home, 0, sizeof(home));
         orb_advert_t home_pub = orb_advertise(ORB_ID(home_position), &home);
 */
-	/* one could wait for multiple topics with this technique, just using one here */
+        /* one could wait for multiple topics with this technique, just using one here */
         px4_pollfd_struct_t fds[4] = {};
-	fds[0].fd = sensor_sub_fd;
-	fds[0].events = POLLIN;
-	fds[1].fd = vehicle_attitude_sub_fd;
-	fds[1].events = POLLIN;
+        fds[0].fd = sensor_sub_fd;
+        fds[0].events = POLLIN;
+        fds[1].fd = vehicle_attitude_sub_fd;
+        fds[1].events = POLLIN;
         fds[2].fd = vehicle_local_position_sub_fd;
         fds[2].events = POLLIN;
         //fds[3].fd = att_pos_mocap_sub_fd;
@@ -121,7 +118,7 @@ int uuv_example_app_main(int argc, char *argv[])
     //orb_publish_auto(ORB_ID(vehicle_vision_position), &_vision_position_pub, &vision_position, &inst, ORB_PRIO_DEFAULT);
 
 
-	int error_counter = 0;
+        int error_counter = 0;
         double phi_target;
         double phi_act;
         double theta_target;
@@ -194,47 +191,47 @@ int uuv_example_app_main(int argc, char *argv[])
                 f0=f1;
                 ro0=ro1;
 
-		/* wait for sensor update of 1 file descriptor for 1000 ms (1 second) */
-		int poll_ret = px4_poll(fds, 1, 1000);
+                /* wait for sensor update of 1 file descriptor for 1000 ms (1 second) */
+                int poll_ret = px4_poll(fds, 1, 1000);
 
-		/* handle the poll result */
-		if (poll_ret == 0) {
-			/* this means none of our providers is giving us data */
-			PX4_ERR("Got no data within a second");
+                /* handle the poll result */
+                if (poll_ret == 0) {
+                        /* this means none of our providers is giving us data */
+                        PX4_ERR("Got no data within a second");
 
-		} else if (poll_ret < 0) {
-			/* this is seriously bad - should be an emergency */
-			if (error_counter < 10 || error_counter % 50 == 0) {
-				/* use a counter to prevent flooding (and slowing us down) */
-				PX4_ERR("ERROR return value from poll(): %d", poll_ret);
-			}
+                } else if (poll_ret < 0) {
+                        /* this is seriously bad - should be an emergency */
+                        if (error_counter < 10 || error_counter % 50 == 0) {
+                                /* use a counter to prevent flooding (and slowing us down) */
+                                PX4_ERR("ERROR return value from poll(): %d", poll_ret);
+                        }
 
-			error_counter++;
+                        error_counter++;
 
-		} else {
+                } else {
 
-			if (fds[0].revents & POLLIN) {
-				/* obtained data for the first file descriptor */
-				struct sensor_combined_s raw_sensor;
-				/* copy sensors raw data into local buffer */
-				orb_copy(ORB_ID(sensor_combined), sensor_sub_fd, &raw_sensor);
-				// printing the sensor data into the terminal
-				PX4_INFO("Acc:\t%8.4f\t%8.4f\t%8.4f",
-					 (double)raw_sensor.accelerometer_m_s2[0],
-					 (double)raw_sensor.accelerometer_m_s2[1],
-					 (double)raw_sensor.accelerometer_m_s2[2]);
+                        if (fds[0].revents & POLLIN) {
+                                /* obtained data for the first file descriptor */
+                                struct sensor_combined_s raw_sensor;
+                                /* copy sensors raw data into local buffer */
+                                orb_copy(ORB_ID(sensor_combined), sensor_sub_fd, &raw_sensor);
+                                // printing the sensor data into the terminal
+                                PX4_INFO("Acc:\t%8.4f\t%8.4f\t%8.4f",
+                                         (double)raw_sensor.accelerometer_m_s2[0],
+                                         (double)raw_sensor.accelerometer_m_s2[1],
+                                         (double)raw_sensor.accelerometer_m_s2[2]);
 
                                 /* obtained data for the second file descriptor */
-				struct vehicle_attitude_s raw_ctrl_state;
-				/* copy sensors raw data into local buffer */
-				orb_copy(ORB_ID(vehicle_attitude), vehicle_attitude_sub_fd, &raw_ctrl_state);
+                                struct vehicle_attitude_s raw_ctrl_state;
+                                /* copy sensors raw data into local buffer */
+                                orb_copy(ORB_ID(vehicle_attitude), vehicle_attitude_sub_fd, &raw_ctrl_state);
 
-				// get current rotation matrix from control state quaternions, the quaternions are generated by the
-				// attitude_estimator_q application using the sensor data
+                                // get current rotation matrix from control state quaternions, the quaternions are generated by the
+                                // attitude_estimator_q application using the sensor data
                                 matrix::Quatf q_att(raw_ctrl_state.q);     // control_state is frequently updated
                                 matrix::Dcmf R = q_att; // create rotation matrix for the quaternion when post multiplying with a column vector
 
-				// orientation vectors
+                                // orientation vectors
                                 x_B(0)=R(1, 0);
                                 x_B(1)=R(0, 0);
                                 x_B(2)=-R(2, 0);     // orientation body x-axis (in world coordinates)
@@ -246,20 +243,20 @@ int uuv_example_app_main(int argc, char *argv[])
                                 z_B(2)=-R(2, 2);     // orientation body z-axis (in world coordinates)
 
 
-				PX4_INFO("x_B:\t%8.4f\t%8.4f\t%8.4f",
-					 (double)x_B(0),
-					 (double)x_B(1),
-					 (double)x_B(2));
+                                PX4_INFO("x_B:\t%8.4f\t%8.4f\t%8.4f",
+                                         (double)x_B(0),
+                                         (double)x_B(1),
+                                         (double)x_B(2));
 
-				PX4_INFO("y_B:\t%8.4f\t%8.4f\t%8.4f",
-					 (double)y_B(0),
-					 (double)y_B(1),
-					 (double)y_B(2));
+                                PX4_INFO("y_B:\t%8.4f\t%8.4f\t%8.4f",
+                                         (double)y_B(0),
+                                         (double)y_B(1),
+                                         (double)y_B(2));
 
                                 PX4_INFO("z_B:\t%8.4f\t%8.4f\t%8.4f",
-					 (double)z_B(0),
-					 (double)z_B(1),
-					 (double)z_B(2));
+                                         (double)z_B(0),
+                                         (double)z_B(1),
+                                         (double)z_B(2));
 
 
                                 /* obtained data for the third file descriptor */
@@ -287,8 +284,8 @@ int uuv_example_app_main(int argc, char *argv[])
 
 
 
-			}
-		}
+                        }
+                }
 
                 // Actual Boat-Heading
                 phi_act=atan2(x_B(2),sqrt(pow(x_B(0),2)+pow(x_B(1),2)));            // angle between global XY-Plane and Boat-X-Axis
@@ -383,15 +380,16 @@ int uuv_example_app_main(int argc, char *argv[])
                 act.control[1] = 0;//pa;           // pitch
                 act.control[2] = 0;//ya;           // yaw
                 act.control[3] = 0.1;//ta;		// thrust
-		orb_publish(ORB_ID(actuator_controls_0), act_pub, &act);
+                orb_publish(ORB_ID(actuator_controls_0), act_pub, &act);
 
-	}
-
-
-	PX4_INFO("Exiting uuv_example_app!");
+        }
 
 
-	return 0;
+        PX4_INFO("Exiting uuv_example_app!");
+
+
+        return 0;
 }
+
 
 

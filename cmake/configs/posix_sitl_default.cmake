@@ -91,7 +91,7 @@ set(config_module_list
 	modules/mc_att_control
 	modules/mc_pos_control
 	modules/vtol_att_control
-    modules/uuv_att_control
+	modules/uuv_att_control
 	modules/uuv_simpos_control
 
 	#
@@ -119,6 +119,8 @@ set(config_module_list
 	# HippoCampus example (AUV from TUHH)
 	#
 	examples/uuv_example_app
+	examples/uuv_leader_app
+	examples/uuv_follower_app
 
 	#
 	# Segway
