@@ -121,6 +121,8 @@ set(config_module_list
 	examples/uuv_example_app
 	examples/uuv_leader_app
 	examples/uuv_follower_app
+	examples/uuv_circ_leader_app
+	examples/uuv_circ_follower_app
 
 	#
 	# Segway
