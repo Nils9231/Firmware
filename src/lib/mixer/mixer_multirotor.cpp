@@ -93,7 +93,7 @@ MultirotorMixer *
 MultirotorMixer::from_text(Mixer::ControlCallback control_cb, uintptr_t cb_handle, const char *buf, unsigned &buflen)
 {
 	MultirotorGeometry geometry = MultirotorGeometry::MAX_GEOMETRY;
-	char geomname[8];
+        char geomname[8];
 	int s[4];
 	int used;
 
@@ -128,6 +128,7 @@ MultirotorMixer::from_text(Mixer::ControlCallback control_cb, uintptr_t cb_handl
 			break;
 		}
 	}
+        debug("Geo: %s", );
 
 	if (geometry == MultirotorGeometry::MAX_GEOMETRY) {
 		debug("unrecognised geometry '%s'", geomname);
@@ -160,12 +161,12 @@ MultirotorMixer::mix(float *outputs, unsigned space)
 	4) scale all outputs to range [idle_speed,1]
 	*/
 
-	float		roll    = math::constrain(get_control(0, 0) * _roll_scale, -1.0f, 1.0f);
-	float		pitch   = math::constrain(get_control(0, 1) * _pitch_scale, -1.0f, 1.0f);
-	float		yaw     = math::constrain(get_control(0, 2) * _yaw_scale, -1.0f, 1.0f);
-	float		thrust  = math::constrain(get_control(0, 3), 0.0f, 1.0f);
-	float		min_out = 1.0f;
-	float		max_out = 0.0f;
+        float		roll    = math::constrain(get_control(0, 0) * _roll_scale, -1.0f, 1.0f);
+        float		pitch   = math::constrain(get_control(0, 1) * _pitch_scale, -1.0f, 1.0f);
+        float		yaw     = math::constrain(get_control(0, 2) * _yaw_scale, -1.0f, 1.0f);
+        float		thrust  = math::constrain(get_control(0, 3), 0.0f, 1.0f);
+        float		min_out = 1.0f;
+        float		max_out = 0.0f;
 
 	// clean out class variable used to capture saturation
 	_saturation_status.value = 0;

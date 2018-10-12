@@ -157,7 +157,7 @@ def thrust_matrix(axis, Ct):
     '''
     # Normalize rotor axis
     ax = axis / np.linalg.norm(axis, axis=1)[:, np.newaxis]
-    print(ax)
+    #print(ax)
     thrust = Ct * ax
     return thrust
 
@@ -217,7 +217,7 @@ def normalize_mix_px4_x(B):
         # Normalize
         B_norm[np.abs(B_norm) < 1e-3] = 1
         B_px = (B / B_norm)
-	print(B_px)
+	#print(B_px)
         return B_px
 
 def normalize_mix_px4_z(B):

@@ -116,22 +116,22 @@ int uuv_leader_app_main(int argc, char *argv[])
         double Kpe =5;              // proportional Gain theta
         double Kpf =2;              // proportional Gain phi
         double Kpro =5;             // proportional Gain eta
-        double Kie =2;              // integrator Gain theta
+        double Kie =0.2;              // integrator Gain theta
         double Kif =2;              // integrator Gain phi
         double Kiro =3;             // integrator Gain eta
-        double Kde =3;              // differentiator Gain theta
+        double Kde =10;              // differentiator Gain theta
         double Kdf =4;              // differentiator Gain phi
         double Kdro =4;             // differentiator Gain eta
-        //double Ksp= 0.25;         // speed Gain
+        double Ksp= 0.25;         // speed Gain
         double nu;                  // yaw controller
         double mu;                  // pitch contoller
         double eta;                 // roll controller
         double dt0=0, dt1=0;        // Steptimedifference
         double Ldelr;               // Distance from Boat to target Point
-        double ro, p, y, t, roa, pa, ya, ta, regmax;          //roll pitch yaw trhrust parameters.
-        double e0=0, e1=0;          // Errors theta (0: state before, 1: actual error)
-        double f0=0, f1=0;          // Errors phi (0: state before, 1: actual error)
-        double ro0=0, ro1=0;        // Errors eta (0: state before, 1: actual error)
+        double ro, p, y, t;//, roa, pa, ya, ta, regmax;          //roll pitch yaw trhrust parameters.
+        double e1=0, e0=0;          // Errors theta (0: state before, 1: actual error)
+        double f1=0, f0=0;          // Errors phi (0: state before, 1: actual error)
+        double ro1=0, ro0=0;        // Errors eta (0: state before, 1: actual error)
         double de=0;                // Error difference theta
         double df=0;                // Error difference phi
         double dro=0;               // Error difference eta
@@ -140,10 +140,19 @@ int uuv_leader_app_main(int argc, char *argv[])
         double Iro=0;               // integrated Error eta
 
         //Trajectory to plan:
-        matrix::Vector3<double> T(1,1,0);
-        T(0)=T(0)/sqrt(pow(T(0),2)+pow(T(1),2)+pow(T(2),2));
-        T(1)=T(1)/sqrt(pow(T(0),2)+pow(T(1),2)+pow(T(2),2));
-        T(2)=T(2)/sqrt(pow(T(0),2)+pow(T(1),2)+pow(T(2),2));
+        matrix::Vector3<double> T0(1,0,0);
+        matrix::Vector3<double> T;
+        PX4_INFO("T:\t%8.4f\t%8.4f\t%8.4f",
+                 (double)T0(0),
+                 (double)T0(1),
+                 (double)T0(2));
+        T(0)=T0(0)/sqrt(pow(T0(0),2)+pow(T0(1),2)+pow(T0(2),2));
+        T(1)=T0(1)/sqrt(pow(T0(0),2)+pow(T0(1),2)+pow(T0(2),2));
+        T(2)=T0(2)/sqrt(pow(T0(0),2)+pow(T0(1),2)+pow(T0(2),2));
+        PX4_INFO("T:\t%8.4f\t%8.4f\t%8.4f",
+                 (double)T(0),
+                 (double)T(1),
+                 (double)T(2));
         //Trajectory direction angles
         alpha=atan2(T(1),T(0));                                             // Angle between global X-Axis and Trajectory Projection in X-Y-Plane
         beta=atan2(T(2),sqrt(pow(T(0),2)+pow(T(1),2)));                     // Angle between global XY-Plane and Trajectory
@@ -163,7 +172,7 @@ int uuv_leader_app_main(int argc, char *argv[])
         matrix::Vector3<double> delr(0,0,0);      // controll help
 
 
-   for (int i = 0; i < 25; i++) {
+   for (int i = 0; i < 300; i++) {
                 // next step
                 dt0 = dt1;
                 e0=e1;
@@ -195,11 +204,11 @@ int uuv_leader_app_main(int argc, char *argv[])
                                 /* copy sensors raw data into local buffer */
                                 orb_copy(ORB_ID(sensor_combined), sensor_sub_fd, &raw_sensor);
                                 // printing the sensor data into the terminal
-                                PX4_INFO("Acc:\t%8.4f\t%8.4f\t%8.4f",
+/*                              PX4_INFO("Acc:\t%8.4f\t%8.4f\t%8.4f",
                                          (double)raw_sensor.accelerometer_m_s2[0],
                                          (double)raw_sensor.accelerometer_m_s2[1],
                                          (double)raw_sensor.accelerometer_m_s2[2]);
-
+*/
                                 /* obtained data for the second file descriptor */
                                 struct vehicle_attitude_s raw_ctrl_state;
                                 /* copy sensors raw data into local buffer */
@@ -242,9 +251,10 @@ int uuv_leader_app_main(int argc, char *argv[])
                                 struct vehicle_local_position_s raw_position;
                                 /* copy sensors raw data into local buffer */
                                 orb_copy(ORB_ID(vehicle_local_position), vehicle_local_position_sub_fd, &raw_position);
-                                r(0)=raw_position.x;
-                                r(1)=raw_position.y;
+                                r(0)=raw_position.y;
+                                r(1)=raw_position.x;
                                 r(2)=-raw_position.z;
+
                                 dt1=(double)raw_position.timestamp/(double)1000000; // actual steptime
                                 if(i==0){
                                     dt0=dt1;
@@ -254,7 +264,7 @@ int uuv_leader_app_main(int argc, char *argv[])
                                          (double)r(0),
                                          (double)r(1),
                                          (double)r(2));
-                                // local position Vector r
+                                // local position Vector r in global coordinates
 
 
 
@@ -273,21 +283,37 @@ int uuv_leader_app_main(int argc, char *argv[])
                 RT(1)=r2x*sin(alpha)*cos(beta);
                 RT(2)=r2x*sin(beta);
 
+/*
+                PX4_INFO("RT:\t%8.4f\t%8.4f\t%8.4f",
+                         (double)RT(0),
+                         (double)RT(1),
+                         (double)RT(2));
+*/
                 // controller target Point
                 Rtarget = RT+Kt*T;
-
+/*
+                PX4_INFO("Rtarget:\t%8.4f\t%8.4f\t%8.4f",
+                         (double)Rtarget(0),
+                         (double)Rtarget(1),
+                         (double)Rtarget(2));
+*/
                 // controller direction Vector
                 rctr=Rtarget-r;
-
+/*
+                PX4_INFO("rctr:\t%8.4f\t%8.4f\t%8.4f",
+                         (double)rctr(0),
+                         (double)rctr(1),
+                         (double)rctr(2));
+*/
                 // nearest distance Vector to trajectory
                 delr = RT-r;                                                        // Vector
                 Ldelr = sqrt(pow(delr(0),2)+pow(delr(1),2)+pow(delr(2),2));         // Distance
 
                 // Controller Target Angles of rctr
                 theta_target = atan2(rctr(1),rctr(0));                              // angle between global X-Axis and rctr
-                phi_target = atan2(rctr(2),sqrt(pow(rctr(0),2)+pow(rctr(1),2)));    // angle betreen globar XY-Plane and rctr
+                phi_target = atan2(rctr(2),sqrt(pow(rctr(0),2)+pow(rctr(1),2)));    // angle betreen global XY-Plane and rctr
 
-                /*
+/*
                 PX4_INFO("phi_act:\t%8.4f",
                          (double)phi_act);
                 PX4_INFO("phi_target:\t%8.4f",
@@ -296,12 +322,22 @@ int uuv_leader_app_main(int argc, char *argv[])
                          (double)theta_act);
                 PX4_INFO("theta_target:\t%8.4f",
                          (double)theta_target);
-                */
-                // actual errors
-                e1 = sin(theta_target-theta_act);                                   // Yaw
+                PX4_INFO("theta-theta:\t%8.4f",
+                         (double)theta_target-theta_act);
+*/                // actual errors
+                if ((theta_target-theta_act)>1.5){
+                    e1=1;
+                }
+                else if ((theta_target-theta_act)<-1.5){
+                    e1=-1;
+                }
+                else{
+                    e1 = sin(theta_target-theta_act);                                   // Yaw
+                }
                 f1 = sin(phi_target-phi_act);                                       // Pitch
                 ro1 = sin(3.1415-atan2(y_B(2),sqrt(pow(y_B(0),2)+pow(y_B(1),2))));  // Roll
-
+                //PX4_INFO("e1:\t%8.4f",
+                //         (double)e1);
                 // Differentiations
                 de = (e1-e0)/(dt1-dt0);
                 df = (f1-f0)/(dt1-dt0);
@@ -324,44 +360,42 @@ int uuv_leader_app_main(int argc, char *argv[])
                 }
 
                 // Controller arguments transformed in Boat-Coordinates
-                ro= (eta-nu*x_B(2));
-                p= mu-nu*y_B(2);
-                y= -nu*-z_B(2);
-                t= ro/3+p/3+y/3;//(Ksp*(1+Ldelr));
+                ro= eta;//(eta-nu*x_B(2));
+                p= mu;//mu-nu*y_B(2);
+                y= -nu;//-nu*-z_B(2);
+                t= (Ksp*(1+Ldelr));//ro/3+p/3+y/3;
 
 
                 // Equalized Controller Arguments
-                regmax = sqrt(ro*ro)+sqrt(p*p)+sqrt(y*y)+sqrt(t*t);
-                roa= 0.75*ro/regmax;
-                pa= 0.75*p/regmax;
-                ya= 0.75*y/regmax;
-                ta= 0.25;//t/regmax;
+                // regmax = sqrt(ro*ro)+sqrt(p*p)+sqrt(y*y)+sqrt(t*t);
+                // roa= 0.75*ro/regmax;
+                // pa= 0.75*p/regmax;
+                // ya= 0.75*y/regmax;
+                // ta= 0.25;//t/regmax;
 
                 PX4_INFO("Ldelr:\t%8.4f",
                          (double)Ldelr);
                 PX4_INFO("ro:\t%8.4f",
-                         (double)roa);
+                         (double)ro);
                 PX4_INFO("p:\t%8.4f",
-                         (double)pa);
+                         (double)p);
                 PX4_INFO("y:\t%8.4f",
-                         (double)ya);
+                         (double)y);
                 PX4_INFO("t:\t%8.4f \n",
-                         (double)ta);
-                PX4_INFO("t:\t%8.4f \n",
-                         (double)55);
+                         (double)t);
 
 
                 // Give actuator input to the HippoC
-                act.control[0] = 0;//roa;         // roll
-                act.control[1] = 0.1;//pa;           // pitch
-                act.control[2] = 0;//ya;           // yaw
-                act.control[3] = 0;//ta;		// thrust
+                act.control[0] = ro*0;         // roll
+                act.control[1] = p*0;           // pitch
+                act.control[2] = y;           // yaw
+                act.control[3] = t;		// thrust
                 orb_publish(ORB_ID(actuator_controls_0), act_pub, &act);
 
         }
 
 
-        PX4_INFO("Exiting uuv_example_app!");
+        PX4_INFO("Exiting uuv_leader_app!");
 
 
         return 0;
