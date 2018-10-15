@@ -1,3 +1,4 @@
+<?xml version="1.0"?>
 <launch>
 <!-- MAVROS posix SITL environment launch script -->
     <!-- launches MAVROS, PX4 SITL, Gazebo environment, and spawns vehicle -->
@@ -22,14 +23,12 @@
     <arg name="tgt_component" default="1" />
     <arg name="log_output" default="screen" />
     <arg name="fcu_protocol" default="v2.0" />
-
     
     <!-- MAVROS configs -->
     <arg name="fcu_url" default="udp://:14541@localhost:14581"/>
     <arg name="respawn_mavros" default="false"/>
     <!-- PX4 configs -->
     <arg name="interactive" default="true"/>
-
     <!-- PX4 SITL and Gazebo -->
     <!-- Posix SITL environment launch script -->
     <!-- launches PX4 SITL, Gazebo environment, and spawns vehicle -->

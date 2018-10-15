@@ -86,7 +86,7 @@ int uuv_follower_app_main(int argc, char *argv[])
         /* limit the update rate to 5 Hz */
         orb_set_interval(vehicle_local_position_sub_fd, 200);
 
-        /* subscribe to localization topic */
+        /* subscribe to position_setpoint topic */
         int position_setpoint_sub_fd = orb_subscribe(ORB_ID(position_setpoint));
         /* limit the update rate to 5 Hz */
         orb_set_interval(position_setpoint_sub_fd, 200);
@@ -125,7 +125,7 @@ int uuv_follower_app_main(int argc, char *argv[])
         double Kde =10;              // differentiator Gain theta
         double Kdf =4;              // differentiator Gain phi
         double Kdro =4;             // differentiator Gain eta
-        double Ksp= 0.125;         // speed Gain
+        double Ksp= 2;         // speed Gain
         double nu;                  // yaw controller
         double mu;                  // pitch contoller
         double eta;                 // roll controller
@@ -366,7 +366,7 @@ int uuv_follower_app_main(int argc, char *argv[])
          }
 
 
-         PX4_INFO("Exiting uuv_leader_app!");
+         PX4_INFO("Exiting uuv_follower_app!");
 
 
          return 0;

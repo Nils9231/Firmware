@@ -86,7 +86,7 @@ int uuv_circ_follower_app_main(int argc, char *argv[])
         /* limit the update rate to 5 Hz */
         orb_set_interval(vehicle_local_position_sub_fd, 200);
 
-        /* subscribe to localization topic */
+        /* subscribe to position_setpoint topic */
         int position_setpoint_sub_fd = orb_subscribe(ORB_ID(position_setpoint));
         /* limit the update rate to 5 Hz */
         orb_set_interval(position_setpoint_sub_fd, 200);
@@ -108,266 +108,249 @@ int uuv_circ_follower_app_main(int argc, char *argv[])
         fds[3].events = POLLIN;
 
 
+
     //orb_publish_auto(ORB_ID(vehicle_vision_position), &_vision_position_pub, &vision_position, &inst, ORB_PRIO_DEFAULT);
 
 
         int error_counter = 0;
-        double phi_target;
+        double phi_target = 0;
         double phi_act;
-        double theta_target;
-        double theta_act;
-        double Kpe =5;              // proportional Gain theta
+        double theta_act=0;
+        double theta_bct=0;
+        double K =1;              // proportional Gain
         double Kpf =2;              // proportional Gain phi
         double Kpro =5;             // proportional Gain eta
-        double Kie =0.2;              // integrator Gain theta
         double Kif =2;              // integrator Gain phi
         double Kiro =3;             // integrator Gain eta
-        double Kde =10;              // differentiator Gain theta
         double Kdf =4;              // differentiator Gain phi
         double Kdro =4;             // differentiator Gain eta
-        double Ksp= 0.125;         // speed Gain
+        double Ksp= 2;         // speed Gain
         double nu;                  // yaw controller
         double mu;                  // pitch contoller
         double eta;                 // roll controller
         double dt0=0, dt1=0;        // Steptimedifference
-        double Ldelr;               // Distance from Boat to target Point
         double ro, p, y, t;//, roa, pa, ya, ta, regmax;          //roll pitch yaw trhrust parameters.
-        double e1=0, e0=0;          // Errors theta (0: state before, 1: actual error)
         double f1=0, f0=0;          // Errors phi (0: state before, 1: actual error)
         double ro1=0, ro0=0;        // Errors eta (0: state before, 1: actual error)
-        double de=0;                // Error difference theta
         double df=0;                // Error difference phi
         double dro=0;               // Error difference eta
-        double Ie=0;                // Integrated Error theta
         double If=0;                // integrated Error phi
         double Iro=0;               // integrated Error eta
-
-        //Position of Leader HippoCampus
-        matrix::Vector3<double> T;
+        double RAD = 3;               // cicle Radius
+        double ome0 = 1/RAD;
+        //int N  =2;                   //Number of uuvs
+        //int ID = 1;                 // Vehicle ID
 
         matrix::Vector3<double> x_B(0, 0, 0);     // orientation body x-axis (in world coordinates)
         matrix::Vector3<double> y_B(0, 0, 0);     // orientation body y-axis (in world coordinates)
         matrix::Vector3<double> z_B(0, 0, 0);     // orientation body z-axis (in world coordinates)
 
         matrix::Vector3<double> r(0, 0, 0);       // local position vector
-
-        matrix::Vector3<double> rctr(0,0,0);      // direction to Rtarget from boat in global coordinates
-
-    for (int i = 0; i < 250; i++) {
-                 // next step
-                 dt0 = dt1;
-                 e0=e1;
-                 f0=f1;
-                 ro0=ro1;
-
-                 /* wait for sensor update of 1 file descriptor for 1000 ms (1 second) */
-                 int poll_ret = px4_poll(fds, 1, 1000);
-
-                 /* handle the poll result */
-                 if (poll_ret == 0) {
-                         /* this means none of our providers is giving us data */
-                         PX4_ERR("Got no data within a second");
-
-                 } else if (poll_ret < 0) {
-                         /* this is seriously bad - should be an emergency */
-                         if (error_counter < 10 || error_counter % 50 == 0) {
-                                 /* use a counter to prevent flooding (and slowing us down) */
-                                 PX4_ERR("ERROR return value from poll(): %d", poll_ret);
-                         }
-
-                         error_counter++;
-
-                 } else {
-
-                         if (fds[0].revents & POLLIN) {
-                                 /* obtained data for the first file descriptor */
-                                 struct sensor_combined_s raw_sensor;
-                                 /* copy sensors raw data into local buffer */
-                                 orb_copy(ORB_ID(sensor_combined), sensor_sub_fd, &raw_sensor);
-                                 // printing the sensor data into the terminal
- /*                              PX4_INFO("Acc:\t%8.4f\t%8.4f\t%8.4f",
-                                          (double)raw_sensor.accelerometer_m_s2[0],
-                                          (double)raw_sensor.accelerometer_m_s2[1],
-                                          (double)raw_sensor.accelerometer_m_s2[2]);
- */
-                                 /* obtained data for the second file descriptor */
-                                 struct vehicle_attitude_s raw_ctrl_state;
-                                 /* copy sensors raw data into local buffer */
-                                 orb_copy(ORB_ID(vehicle_attitude), vehicle_attitude_sub_fd, &raw_ctrl_state);
-
-                                 // get current rotation matrix from control state quaternions, the quaternions are generated by the
-                                 // attitude_estimator_q application using the sensor data
-                                 matrix::Quatf q_att(raw_ctrl_state.q);     // control_state is frequently updated
-                                 matrix::Dcmf R = q_att; // create rotation matrix for the quaternion when post multiplying with a column vector
-
-                                 // orientation vectors
-                                 x_B(0)=R(1, 0);
-                                 x_B(1)=R(0, 0);
-                                 x_B(2)=-R(2, 0);     // orientation body x-axis (in world coordinates)
-                                 y_B(0)=R(1, 1);
-                                 y_B(1)=R(0, 1);
-                                 y_B(2)=-R(2, 1);     // orientation body y-axis (in world coordinates)
-                                 z_B(0)=R(1, 2);
-                                 z_B(1)=R(0, 2);
-                                 z_B(2)=-R(2, 2);     // orientation body z-axis (in world coordinates)
-
-
-                                 PX4_INFO("x_B:\t%8.4f\t%8.4f\t%8.4f",
-                                          (double)x_B(0),
-                                          (double)x_B(1),
-                                          (double)x_B(2));
-
-                                 PX4_INFO("y_B:\t%8.4f\t%8.4f\t%8.4f",
-                                          (double)y_B(0),
-                                          (double)y_B(1),
-                                          (double)y_B(2));
-
-                                 PX4_INFO("z_B:\t%8.4f\t%8.4f\t%8.4f",
-                                          (double)z_B(0),
-                                          (double)z_B(1),
-                                          (double)z_B(2));
-
-
-                                 /* obtained data for the third file descriptor */
-                                 struct vehicle_local_position_s raw_position;
-                                 /* copy sensors raw data into local buffer */
-                                 orb_copy(ORB_ID(vehicle_local_position), vehicle_local_position_sub_fd, &raw_position);
-                                 r(0)=raw_position.y;
-                                 r(1)=raw_position.x;
-                                 r(2)=-raw_position.z;
-                                 dt1=(double)raw_position.timestamp/(double)1000000; // actual steptime
-                                 if(i==0){
-                                     dt0=dt1;
-                                 }
-                                 // printing the sensor data into the terminal
-                                 PX4_INFO("POS:\t%8.4f\t%8.4f\t%8.4f",
-                                          (double)r(0),
-                                          (double)r(1),
-                                          (double)r(2));
-                                 // local position Vector r in global coordinates
-
-                                 struct position_setpoint_s possp;
-                                 orb_copy(ORB_ID(position_setpoint), position_setpoint_sub_fd, &possp);
-                                 T(0)=possp.y;
-                                 T(1)=possp.x;
-                                 T(2)=possp.z;
-                                 PX4_INFO("Leader Pos:\t%8.4f\t%8.4f\t%8.4f",
-                                          (double)T(0),
-                                          (double)T(1),
-                                          (double)T(2));
-                                 // local position Vector T in global coordinates
+        matrix::Vector3<double> v1;               // local speed vectors
+        //matrix::Vector3<double> v2;               // local speed vectors
+        matrix::Vector3<double> T(0, 0, 0);       // Position Vektor of other Boats
 
 
 
-                         }
-                 }
-
-                 // Actual Boat-Heading
-                 phi_act=atan2(x_B(2),sqrt(pow(x_B(0),2)+pow(x_B(1),2)));            // angle between global XY-Plane and Boat-X-Axis
-                 theta_act=atan2(x_B(1),x_B(0));                                     // angle between global and Boat X-Axis
+        matrix::Vector3<double> c1;                // circ-middlepoint vectors
+        matrix::Vector3<double> c2;                // circ-middlepoint vectors
 
 
 
 
-                 // controller direction Vector
-                 rctr=T-r;
+   for (int i = 0; i < 180; i++) {
+                // next step
+                dt0 = dt1;
+                f0=f1;
+                ro0=ro1;
 
-                 PX4_INFO("rctr:\t%8.4f\t%8.4f\t%8.4f",
-                          (double)rctr(0),
-                          (double)rctr(1),
-                          (double)rctr(2));
+                /* wait for sensor update of 1 file descriptor for 1000 ms (1 second) */
+                int poll_ret = px4_poll(fds, 1, 1000);
 
-                 // Distance to leader
-                 Ldelr = sqrt(pow(rctr(0),2)+pow(rctr(1),2)+pow(rctr(2),2));         // Distance
+                /* handle the poll result */
+                if (poll_ret == 0) {
+                        /* this means none of our providers is giving us data */
+                        PX4_ERR("Got no data within a second");
 
-                 // Controller Target Angles of rctr
-                 theta_target = atan2(rctr(1),rctr(0));                              // angle between global X-Axis and rctr
-                 phi_target = atan2(rctr(2),sqrt(pow(rctr(0),2)+pow(rctr(1),2)));    // angle betreen global XY-Plane and rctr
+                } else if (poll_ret < 0) {
+                        /* this is seriously bad - should be an emergency */
+                        if (error_counter < 10 || error_counter % 50 == 0) {
+                                /* use a counter to prevent flooding (and slowing us down) */
+                                PX4_ERR("ERROR return value from poll(): %d", poll_ret);
+                        }
 
- /*
-                 PX4_INFO("phi_act:\t%8.4f",
-                          (double)phi_act);
-                 PX4_INFO("phi_target:\t%8.4f",
-                          (double)phi_target);
-                 PX4_INFO("theta_act:\t%8.4f",
-                          (double)theta_act);
-                 PX4_INFO("theta_target:\t%8.4f",
-                          (double)theta_target);
-                 PX4_INFO("theta-theta:\t%8.4f",
-                          (double)theta_target-theta_act);
- */                // actual errors
-                 if ((theta_target-theta_act)>1.5){
-                     e1=1;
-                 }
-                 else if ((theta_target-theta_act)<-1.5){
-                     e1=-1;
-                 }
-                 else{
-                     e1 = sin(theta_target-theta_act);                                   // Yaw
-                 }
-                 f1 = sin(phi_target-phi_act);                                       // Pitch
-                 ro1 = sin(3.1415-atan2(y_B(2),sqrt(pow(y_B(0),2)+pow(y_B(1),2))));  // Roll
-                 //PX4_INFO("e1:\t%8.4f",
-                 //         (double)e1);
-                 // Differentiations
-                 de = (e1-e0)/(dt1-dt0);
-                 df = (f1-f0)/(dt1-dt0);
-                 dro = (ro1-ro0)/(dt1-dt0);
+                        error_counter++;
 
-                 // Integrations
-                 Ie += e1*(dt1-dt0);
-                 If += f1*(dt1-dt0);
-                 Iro+= ro1*(dt1-dt0);
+                } else {
 
-                 if(i<=2){
-                     nu =0;
-                     mu=0;
-                     eta=0;
-                 }
-                 else{
-                 nu = Kpe*e1+Kie*Ie+Kde*de;
-                 mu = Kpf*f1+Kif*If+Kdf*df;
-                 eta = Kpro*ro1+Kiro*Iro+Kdro*dro;
-                 }
+                        if (fds[0].revents & POLLIN) {
+                                /* obtained data for the first file descriptor */
+                                struct sensor_combined_s raw_sensor;
+                                /* copy sensors raw data into local buffer */
+                                orb_copy(ORB_ID(sensor_combined), sensor_sub_fd, &raw_sensor);
+                                // printing the sensor data into the terminal
+/*                              PX4_INFO("Acc:\t%8.4f\t%8.4f\t%8.4f",
+                                         (double)raw_sensor.accelerometer_m_s2[0],
+                                         (double)raw_sensor.accelerometer_m_s2[1],
+                                         (double)raw_sensor.accelerometer_m_s2[2]);
+*/
+                                /* obtained data for the second file descriptor */
+                                struct vehicle_attitude_s raw_ctrl_state;
+                                /* copy sensors raw data into local buffer */
+                                orb_copy(ORB_ID(vehicle_attitude), vehicle_attitude_sub_fd, &raw_ctrl_state);
 
-                 // Controller arguments transformed in Boat-Coordinates
-                 ro= eta;//(eta-nu*x_B(2));
-                 p= mu;//mu-nu*y_B(2);
-                 y= -nu;//-nu*-z_B(2);
-                 t= (Ksp*(1+Ldelr));//ro/3+p/3+y/3;
+                                // get current rotation matrix from control state quaternions, the quaternions are generated by the
+                                // attitude_estimator_q application using the sensor data
+                                matrix::Quatf q_att(raw_ctrl_state.q);     // control_state is frequently updated
+                                matrix::Dcmf R = q_att; // create rotation matrix for the quaternion when post multiplying with a column vector
+
+                                // orientation vectors
+                                x_B(0)=R(1, 0);
+                                x_B(1)=R(0, 0);
+                                x_B(2)=-R(2, 0);     // orientation body x-axis (in world coordinates)
+                                y_B(0)=R(1, 1);
+                                y_B(1)=R(0, 1);
+                                y_B(2)=-R(2, 1);     // orientation body y-axis (in world coordinates)
+                                z_B(0)=R(1, 2);
+                                z_B(1)=R(0, 2);
+                                z_B(2)=-R(2, 2);     // orientation body z-axis (in world coordinates)
 
 
-                 // Equalized Controller Arguments
-                 // regmax = sqrt(ro*ro)+sqrt(p*p)+sqrt(y*y)+sqrt(t*t);
-                 // roa= 0.75*ro/regmax;
-                 // pa= 0.75*p/regmax;
-                 // ya= 0.75*y/regmax;
-                 // ta= 0.25;//t/regmax;
+                                PX4_INFO("x_B:\t%8.4f\t%8.4f\t%8.4f",
+                                         (double)x_B(0),
+                                         (double)x_B(1),
+                                         (double)x_B(2));
 
-                 PX4_INFO("Ldelr:\t%8.4f",
-                          (double)Ldelr);
-                 PX4_INFO("ro:\t%8.4f",
-                          (double)ro);
-                 PX4_INFO("p:\t%8.4f",
-                          (double)p);
-                 PX4_INFO("y:\t%8.4f",
-                          (double)y);
-                 PX4_INFO("t:\t%8.4f \n",
-                          (double)t);
+                                PX4_INFO("y_B:\t%8.4f\t%8.4f\t%8.4f",
+                                         (double)y_B(0),
+                                         (double)y_B(1),
+                                         (double)y_B(2));
+
+                                PX4_INFO("z_B:\t%8.4f\t%8.4f\t%8.4f",
+                                         (double)z_B(0),
+                                         (double)z_B(1),
+                                         (double)z_B(2));
 
 
-                 // Give actuator input to the HippoC
-                 act.control[0] = ro*0;         // roll
-                 act.control[1] = p*0;           // pitch
-                 act.control[2] = y;           // yaw
-                 act.control[3] = t;		// thrust
-                 orb_publish(ORB_ID(actuator_controls_0), act_pub, &act);
+                                /* obtained data for the third file descriptor */
+                                struct vehicle_local_position_s raw_position;
+                                /* copy sensors raw data into local buffer */
+                                orb_copy(ORB_ID(vehicle_local_position), vehicle_local_position_sub_fd, &raw_position);
+                                r(0)=raw_position.y;
+                                r(1)=raw_position.x;
+                                r(2)=-raw_position.z;
 
-         }
+                                dt1=(double)raw_position.timestamp/(double)1000000; // actual steptime
+                                if(i==0){
+                                    dt0=dt1;
+                                }
+                                // printing the sensor data into the terminal
+                                PX4_INFO("POS:\t%8.4f\t%8.4f\t%8.4f",
+                                         (double)r(0),
+                                         (double)r(1),
+                                         (double)r(2));
+                                // local position Vector r in global coordinates
+                                struct position_setpoint_s possp;
+                                orb_copy(ORB_ID(position_setpoint), position_setpoint_sub_fd, &possp);
+                                T(0)=possp.y;
+                                T(1)=possp.x;
+                                T(2)=possp.z;
+                                theta_bct = possp.yaw;
+                                PX4_INFO("Leader Pos:\t%8.4f\t%8.4f\t%8.4f\t%8.4f",
+                                         (double)T(0),
+                                         (double)T(1),
+                                         (double)T(2),
+                                         (double)theta_bct);
+                                // local position Vector T in global coordinates
 
 
-         PX4_INFO("Exiting uuv_leader_app!");
+
+                        }
+                }
+
+                // Actual Boat-Headings
+                phi_act=atan2(x_B(2),sqrt(pow(x_B(0),2)+pow(x_B(1),2)));            // angle between global XY-Plane and Boat-X-Axis
+                theta_act=atan2(x_B(1),x_B(0));                                     // angle between global and Boat X-Axis
+
+                //Actual Velocity vectors
+                v1(1)=cos(theta_act);
+                v1(2)=sin(theta_act);
+                v1(3)=0;
+                //v2(1)=cos(theta_bct);
+                //v2(2)=sin(theta_bct);
+                //v2(3)=0;
+
+                //circ middlepoints
+                c1(1)=r(1)-RAD*sin(theta_act);
+                c1(2)=r(2)+RAD*cos(theta_act);
+                c1(3)=0;
+                c2(1)=T(1)-RAD*sin(theta_bct);
+                c2(2)=T(2)+RAD*cos(theta_bct);
+                c2(3)=0;
+
+                // controller
+                nu = ome0*(1+K+((c2(1)-c1(1))*v1(1)+(c2(2)-c1(2))*v1(2)+(c2(3)-c1(3))*v1(3)));
+
+                f1 = sin(phi_target-phi_act);                                       // Pitch
+                ro1 = sin(3.1415-atan2(y_B(2),sqrt(pow(y_B(0),2)+pow(y_B(1),2))));  // Roll
+
+                // Differentiations
+                df = (f1-f0)/(dt1-dt0);
+                dro = (ro1-ro0)/(dt1-dt0);
+
+                // Integrations
+                If += f1*(dt1-dt0);
+                Iro+= ro1*(dt1-dt0);
+
+                if(i<=2){
+                    mu=0;
+                    eta=0;
+                }
+                else{
+                mu = Kpf*f1+Kif*If+Kdf*df;
+                eta = Kpro*ro1+Kiro*Iro+Kdro*dro;
+                }
+
+                // Controller arguments transformed in Boat-Coordinates
+                ro= eta;//(eta-nu*x_B(2));
+                p= mu;//mu-nu*y_B(2);
+                y= nu;//-nu*-z_B(2);
+                t= Ksp;//ro/3+p/3+y/3;
 
 
-         return 0;
- }
+                // Equalized Controller Arguments
+                // regmax = sqrt(ro*ro)+sqrt(p*p)+sqrt(y*y)+sqrt(t*t);
+                // roa= 0.75*ro/regmax;
+                // pa= 0.75*p/regmax;
+                // ya= 0.75*y/regmax;
+                // ta= 0.25;//t/regmax;
+
+
+                PX4_INFO("ro:\t%8.4f",
+                         (double)ro);
+                PX4_INFO("p:\t%8.4f",
+                         (double)p);
+                PX4_INFO("y:\t%8.4f",
+                         (double)y);
+                PX4_INFO("t:\t%8.4f \n",
+                         (double)t);
+
+
+                // Give actuator input to the HippoC
+                act.control[0] = ro*0;         // roll
+                act.control[1] = p*0;           // pitch
+                act.control[2] = y;           // yaw
+                act.control[3] = t;		// thrust
+                orb_publish(ORB_ID(actuator_controls_0), act_pub, &act);
+
+        }
+
+
+        PX4_INFO("Exiting uuv_circ_follower_app!");
+
+
+        return 0;
+}
+
+
+

@@ -122,7 +122,7 @@ int uuv_leader_app_main(int argc, char *argv[])
         double Kde =10;              // differentiator Gain theta
         double Kdf =4;              // differentiator Gain phi
         double Kdro =4;             // differentiator Gain eta
-        double Ksp= 0.25;         // speed Gain
+        double Ksp= 2;         // speed Gain
         double nu;                  // yaw controller
         double mu;                  // pitch contoller
         double eta;                 // roll controller

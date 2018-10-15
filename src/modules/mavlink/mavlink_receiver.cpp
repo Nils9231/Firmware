@@ -881,6 +881,8 @@ MavlinkReceiver::handle_message_att_pos_mocap(mavlink_message_t *msg)
 void
 MavlinkReceiver::handle_message_set_position_target_local_ned(mavlink_message_t *msg)
 {
+    /*Zweckentfrendung dieses Topics für die Kommunikation zwischen den Booten in der Simulation. Position von uuv2 wird als position übermittelt.
+     * Orientierung wird in Geschwindigkeit und alt als Quaternionen übertragen.*/
 	mavlink_set_position_target_local_ned_t set_position_target_local_ned;
 	mavlink_msg_set_position_target_local_ned_decode(msg, &set_position_target_local_ned);
 
@@ -891,6 +893,7 @@ MavlinkReceiver::handle_message_set_position_target_local_ned(mavlink_message_t 
         position_setpoint.x = set_position_target_local_ned.x;
         position_setpoint.y = set_position_target_local_ned.y;
         position_setpoint.z = set_position_target_local_ned.z;
+        position_setpoint.yaw = set_position_target_local_ned.yaw;
 
         orb_publish(ORB_ID(position_setpoint), position_setpoint_pub, &position_setpoint
                     );
