@@ -250,7 +250,7 @@ int uuv_follower_app_main(int argc, char *argv[])
                                  orb_copy(ORB_ID(position_setpoint), position_setpoint_sub_fd, &possp);
                                  T(0)=possp.y;
                                  T(1)=possp.x;
-                                 T(2)=possp.z;
+                                 T(2)=-possp.z;
                                  PX4_INFO("Leader Pos:\t%8.4f\t%8.4f\t%8.4f",
                                           (double)T(0),
                                           (double)T(1),
