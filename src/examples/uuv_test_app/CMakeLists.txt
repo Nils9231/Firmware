@@ -31,10 +31,10 @@
 #
 ############################################################################
 px4_add_module(
-	MODULE examples__uuv_follower_app
-	MAIN uuv_follower_app
+	MODULE examples__uuv_test_app
+	MAIN uuv_test_app
 	STACK_MAIN 2000
 	SRCS
-		uuv_follower_app.cpp
+		uuv_test_app.cpp
 	DEPENDS
 	)

@@ -79,11 +79,11 @@ using namespace simulator;
 
 void Simulator::pack_actuator_message(mavlink_hil_actuator_controls_t &msg, unsigned index)
 {
-	msg.time_usec = hrt_absolute_time();
+        msg.time_usec = hrt_absolute_time();
 
 	bool armed = (_vehicle_status.arming_state == vehicle_status_s::ARMING_STATE_ARMED);
 
-	const float pwm_center = (PWM_DEFAULT_MAX + PWM_DEFAULT_MIN) / 2;
+        const float pwm_center = (PWM_DEFAULT_MAX + PWM_DEFAULT_MIN) / 2;
 
 	int _system_type = _param_system_type.get();
 
@@ -98,14 +98,14 @@ void Simulator::pack_actuator_message(mavlink_hil_actuator_controls_t &msg, unsi
 
 		/* multirotors: set number of rotor outputs depending on type */
 
-		unsigned n;
+                unsigned n;
 
 		switch (_system_type) {
 		case MAV_TYPE_VTOL_DUOROTOR:
 			n = 2;
 			break;
 
-		case MAV_TYPE_QUADROTOR:
+                case MAV_TYPE_QUADROTOR:
 		case MAV_TYPE_VTOL_QUADROTOR:
 		case MAV_TYPE_VTOL_TILTROTOR:
 			n = 4;
@@ -124,12 +124,17 @@ void Simulator::pack_actuator_message(mavlink_hil_actuator_controls_t &msg, unsi
 			n = 8;
 			break;
 		}
-
-		for (unsigned i = 0; i < 16; i++) {
+                /*
+                 * CHANGED PWM SCALE FOR QUADROTORS TO -1...1 FOR HIPPOCAMPUS SIM.
+                 */
+                for (unsigned i = 0; i < 16; i++) {
 			if (_actuators[index].output[i] > PWM_DEFAULT_MIN / 2) {
 				if (i < n) {
-					/* scale PWM out PWM_DEFAULT_MIN..PWM_DEFAULT_MAX us to 0..1 for rotors */
-					msg.controls[i] = (_actuators[index].output[i] - PWM_DEFAULT_MIN) / (PWM_DEFAULT_MAX - PWM_DEFAULT_MIN);
+                                        /* scale PWM out PWM_DEFAULT_MIN..PWM_DEFAULT_MAX us to 0..1 for rotors
+                                        msg.controls[i] = (_actuators[index].output[i] - PWM_DEFAULT_MIN) / (PWM_DEFAULT_MAX - PWM_DEFAULT_MIN);*/
+
+                                        /* scale PWM out PWM_DEFAULT_MIN..PWM_DEFAULT_MAX us to -1..1 for other channels */
+                                        msg.controls[i] = (_actuators[index].output[i] - pwm_center) / ((PWM_DEFAULT_MAX - PWM_DEFAULT_MIN) / 2);
 
 				} else {
 					/* scale PWM out PWM_DEFAULT_MIN..PWM_DEFAULT_MAX us to -1..1 for other channels */

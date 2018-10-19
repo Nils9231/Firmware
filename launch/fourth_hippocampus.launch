@@ -1,20 +1,20 @@
 <?xml version="1.0"?>
 <launch>
-<!-- MAVROS posix SITL environment launch script -->
+    <!-- MAVROS posix SITL environment launch script -->
     <!-- launches MAVROS, PX4 SITL, Gazebo environment, and spawns vehicle -->
     <!-- vehicle pose -->
-    <arg name="x" default="0"/>
+    <arg name="x" default="2"/>
     <arg name="y" default="0"/>
     <arg name="z" default="0"/>
     <arg name="R" default="3.141592654"/>
     <arg name="P" default="0"/>
     <arg name="Y" default="1.570796327"/>
-    <arg name="mavlink_udp_port" value="14561"/>
-    <arg name="ID" value="1"/>
+    <arg name="mavlink_udp_port" value="14563"/>
+    <arg name="ID" value="3"/>
     <!-- vehicle model and world -->
     <arg name="est" default="ekf2"/>
-    <arg name="vehicle" default="hippocampus_vision_1"/>
-    <arg name="world" default="/home/hippoc/src/sitl_gazebo/worlds/hippocampus_vision_1.world"/>
+    <arg name="vehicle" default="hippocampus_vision_3"/>
+    <arg name="world" default="/home/hippoc/src/sitl_gazebo/worlds/hippocampus_vision_3.world"/>
     <arg name="sdf" default="/home/hippoc/src/sitl_gazebo/models/$(arg vehicle)/$(arg vehicle).sdf"/>
 
     <!-- added for mavros node launch-->
@@ -23,9 +23,9 @@
     <arg name="tgt_component" default="1" />
     <arg name="log_output" default="screen" />
     <arg name="fcu_protocol" default="v2.0" />
-    
+
     <!-- MAVROS configs -->
-    <arg name="fcu_url" default="udp://:14541@localhost:14581"/>
+    <arg name="fcu_url" default="udp://:14543@localhost:14583"/>
     <arg name="respawn_mavros" default="false"/>
     <!-- PX4 configs -->
     <arg name="interactive" default="true"/>
@@ -34,26 +34,22 @@
     <!-- launches PX4 SITL, Gazebo environment, and spawns vehicle -->
     <env name="PX4_SIM_MODEL" value="$(arg vehicle)" />
     <env name="PX4_ESTIMATOR" value="$(arg est)" />
-<group ns="uuv1">
+<group ns="uuv3">
     <!-- PX4 SITL -->
     <arg unless="$(arg interactive)" name="px4_command_arg1" value="-d"/>
     <arg     if="$(arg interactive)" name="px4_command_arg1" value=""/>
     <node name="sitl_$(arg ID)" pkg="px4" type="px4" output="screen" args="$(find px4)/ROMFS/px4fmu_common -s etc/init.d-posix/rcS -i $(arg ID) $(arg px4_command_arg1)" required="true">
-    </node>
-<!--<node name="sitl_$(arg ID)" pkg="px4" type="px4" output="screen"
+    </node>    
+    <!--<node name="sitl_$(arg ID)" pkg="px4" type="px4" output="screen"
         args="$(find px4)/ROMFS/px4fmu_common -s etc/init.d-posix/rcS $(arg px4_command_arg1)" required="true"/>-->
     <!--<node name="sitl" pkg="px4" type="px4" output="screen"
         args="$(find px4)/ROMFS/px4fmu_common $(find px4)/ROMFS/px4fmu_common/init.d-posix/rcS $(arg px4_command_arg1)" required="true"/>-->
-
-    
     <!-- gazebo model -->
     <node name="$(arg vehicle)_$(arg ID)_spawn" output="screen" pkg="gazebo_ros" type="spawn_model" args="-sdf -file $(arg sdf) -model $(arg vehicle) -x $(arg x) -y $(arg y) -z $(arg z) -R $(arg R) -P $(arg P) -Y $(arg Y)"/>
-    <!--<node name="$(arg vehicle)_$(arg ID)_spawn" pkg="gazebo_ros" type="spawn_model" output="screen" args="-sdf -file $(arg sdf) -model $(arg vehicle) -x $(arg x) -y $(arg y) -z $(arg z) -R $(arg R) -P $(arg P) -Y $(arg Y)"/> -->
-
-
+    <!--<node name="$(arg vehicle)_$(arg ID)_spawn" pkg="gazebo_ros" type="spawn_model" output="screen" args="-sdf -file $(arg sdf) -model $(arg vehicle) -x $(arg x) -y $(arg y) -z $(arg z) -R $(arg R) -P $(arg P) -Y $(arg Y)"/>  -->
 
     <!-- MAVROS -->
-<!--    <include file="$(find mavros)/launch/node.launch">
+<!--<include file="$(find mavros)/launch/node.launch">
     	<arg name="pluginlists_yaml" value="$(find mavros)/launch/px4_pluginlists.yaml" />
 	<arg name="config_yaml" value="$(find px4)/launch/HippoC_config.yaml" /> -->
 	<!--<arg name="config_yaml" value="$(find mavros)/launch/px4_config.yaml" />-->
@@ -64,7 +60,9 @@
 	<arg name="log_output" value="$(arg log_output)" />
 	<arg name="fcu_protocol" value="$(arg fcu_protocol)" />
 	<arg name="respawn_mavros" default="$(arg respawn_mavros)" />
-    </include> -->
+    </include>-->
+
+
 
     <include file="$(find mavros)/launch/px4.launch">
 	<!--<arg name="config_yaml" value="$(find px4)/launch/HippoC_config.yaml" /> -->
@@ -74,6 +72,6 @@
         <arg name="gcs_url" value=""/>
         <arg name="fcu_url" value="$(arg fcu_url)"/>
         <arg name="respawn_mavros" value="$(arg respawn_mavros)"/>
-    </include> 
+    </include>
 </group>
 </launch>

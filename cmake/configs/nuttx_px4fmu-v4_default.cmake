@@ -132,10 +132,8 @@ set(config_module_list
 	# HippoCampus example (AUV from TUHH)
 	#
 	examples/uuv_example_app
-	examples/uuv_leader_app
-	examples/uuv_follower_app
-	examples/uuv_circ_leader_app
-	examples/uuv_circ_follower_app
+	examples/uuv_leafo_app
+	examples/uuv_circ_app
 
 	#
 	# Segway

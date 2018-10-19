@@ -161,6 +161,7 @@ private:
 	void handle_message_named_value_float(mavlink_message_t *msg);
 	void handle_message_debug(mavlink_message_t *msg);
 	void handle_message_debug_vect(mavlink_message_t *msg);
+	void handle_message_set_position_target_global_int(mavlink_message_t *msg);
 
 	void *receive_thread(void *arg);
 

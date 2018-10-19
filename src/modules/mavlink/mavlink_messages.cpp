@@ -2611,7 +2611,7 @@ protected:
 			msg.servo13_raw = act.output[12];
 			msg.servo14_raw = act.output[13];
 			msg.servo15_raw = act.output[14];
-			msg.servo16_raw = act.output[15];
+                        msg.servo16_raw = act.output[15];
 
 			mavlink_msg_servo_output_raw_send_struct(_mavlink->get_channel(), &msg);
 

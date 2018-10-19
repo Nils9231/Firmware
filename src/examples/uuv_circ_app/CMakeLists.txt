@@ -31,10 +31,11 @@
 #
 ############################################################################
 px4_add_module(
-	MODULE examples__uuv_circ_leader_app
-	MAIN uuv_circ_leader_app
+	MODULE examples__uuv_circ_app
+	MAIN uuv_circ_app
 	STACK_MAIN 2000
 	SRCS
-		uuv_circ_leader_app.cpp
+		uuv_circ_app.cpp
+                circ_app_params.c
 	DEPENDS
 	)

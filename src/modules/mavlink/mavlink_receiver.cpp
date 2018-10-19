@@ -247,7 +247,11 @@ MavlinkReceiver::handle_message(mavlink_message_t *msg)
 	case MAVLINK_MSG_ID_SET_POSITION_TARGET_LOCAL_NED:
 		handle_message_set_position_target_local_ned(msg);
 		break;
-
+/*
+        case MAVLINK_MSG_ID_SET_POSITION_TARGET_GLOBAL_INT:
+                handle_message_set_position_target_global_int(msg);
+                break;
+*/
 	case MAVLINK_MSG_ID_SET_ATTITUDE_TARGET:
 		handle_message_set_attitude_target(msg);
 		break;
@@ -877,7 +881,28 @@ MavlinkReceiver::handle_message_att_pos_mocap(mavlink_message_t *msg)
 
 	orb_publish_auto(ORB_ID(vehicle_mocap_odometry), &_mocap_odometry_pub, &mocap_odom, &instance_id, ORB_PRIO_HIGH);
 }
+/*
+void
+MavlinkReceiver::handle_message_set_position_target_global_int(mavlink_message_t *msg)
+{*/
+    /*Zweckentfrendung dieses Topics und der Message für die Kommunikation zwischen den Booten in der Simulation. Position von uuv2 wird als position übermittelt.
+     * Orientierung wird in Geschwindigkeit und alt als Quaternionen übertragen. WENN EIGENE MAVROS MESSAGE VORHANDEN DIESE FKT LÖSCHEN UND DIE HIERUNTER ZURÜCKÄNDERN*/
+  /*      mavlink_set_position_target_global_int_t set_position_target_global_int;
+        mavlink_msg_set_position_target_global_int_decode(msg, &set_position_target_global_int);
 
+        struct position_setpoint_triplet_s position_setpoint_triplet;
+        memset(&position_setpoint_triplet, 0, sizeof(position_setpoint_triplet));
+        orb_advert_t position_setpoint_triplet_pub = orb_advertise(ORB_ID(position_setpoint_triplet), &position_setpoint_triplet);
+
+        position_setpoint_triplet.current.x = set_position_target_global_int.lat_int;
+        position_setpoint_triplet.current.y = set_position_target_global_int.lon_int;
+        position_setpoint_triplet.current.z = set_position_target_global_int.alt;
+        position_setpoint_triplet.current.yaw = set_position_target_global_int.yaw;
+
+        orb_publish(ORB_ID(position_setpoint_triplet), position_setpoint_triplet_pub, &position_setpoint_triplet
+                    );
+}
+*/
 void
 MavlinkReceiver::handle_message_set_position_target_local_ned(mavlink_message_t *msg)
 {
@@ -895,8 +920,7 @@ MavlinkReceiver::handle_message_set_position_target_local_ned(mavlink_message_t 
         position_setpoint.z = set_position_target_local_ned.z;
         position_setpoint.yaw = set_position_target_local_ned.yaw;
 
-        orb_publish(ORB_ID(position_setpoint), position_setpoint_pub, &position_setpoint
-                    );
+        orb_publish(ORB_ID(position_setpoint), position_setpoint_pub, &position_setpoint);
 
 /*
 	struct offboard_control_mode_s offboard_control_mode = {};

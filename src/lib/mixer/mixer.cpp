@@ -66,7 +66,7 @@ Mixer::get_control(uint8_t group, uint8_t index)
 float
 Mixer::scale(const mixer_scaler_s &scaler, float input)
 {
-	float output;
+        float output;
 
 	if (input < 0.0f) {
 		output = (input * scaler.negative_scale) + scaler.offset;

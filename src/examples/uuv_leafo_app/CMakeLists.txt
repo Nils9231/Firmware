@@ -31,10 +31,10 @@
 #
 ############################################################################
 px4_add_module(
-	MODULE examples__uuv_circ_follower_app
-	MAIN uuv_circ_follower_app
+	MODULE examples__uuv_leafo_app
+	MAIN uuv_leafo_app
 	STACK_MAIN 2000
 	SRCS
-		uuv_circ_follower_app.cpp
+		uuv_leafo_app.cpp
 	DEPENDS
 	)

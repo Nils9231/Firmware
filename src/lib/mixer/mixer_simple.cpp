@@ -1,4 +1,4 @@
-/****************************************************************************
+﻿/****************************************************************************
  *
  *   Copyright (c) 2012-2015 PX4 Development Team. All rights reserved.
  *
@@ -59,13 +59,13 @@ SimpleMixer::~SimpleMixer()
 
 unsigned SimpleMixer::set_trim(float trim)
 {
-	_pinfo->output_scaler.offset = trim;
+        _pinfo->output_scaler.offset = trim;
 	return 1;
 }
 
 unsigned SimpleMixer::get_trim(float *trim)
 {
-	*trim = _pinfo->output_scaler.offset;
+        *trim = _pinfo->output_scaler.offset;
 	return 1;
 }
 
@@ -100,7 +100,7 @@ SimpleMixer::parse_output_scaler(const char *buf, unsigned &buflen, mixer_scaler
 	scaler.positive_scale	= s[1] / 10000.0f;
 	scaler.offset		= s[2] / 10000.0f;
 	scaler.min_output	= s[3] / 10000.0f;
-	scaler.max_output	= s[4] / 10000.0f;
+        scaler.max_output	= s[4] / 10000.0f;
 
 	return 0;
 }
@@ -138,7 +138,7 @@ SimpleMixer::parse_control_scaler(const char *buf, unsigned &buflen, mixer_scale
 	scaler.positive_scale	= s[1] / 10000.0f;
 	scaler.offset		= s[2] / 10000.0f;
 	scaler.min_output	= s[3] / 10000.0f;
-	scaler.max_output	= s[4] / 10000.0f;
+        scaler.max_output	= s[4] / 10000.0f;
 
 	return 0;
 }
@@ -216,7 +216,7 @@ SimpleMixer::from_text(Mixer::ControlCallback control_cb, uintptr_t cb_handle, c
 					 mixinfo->controls[i].control_index)) {
 			debug("simple mixer parser failed parsing ctrl scaler tag, ret: '%s'", buf);
 			goto out;
-		}
+                }
 
 	}
 
@@ -325,7 +325,7 @@ SimpleMixer::mix(float *outputs, unsigned space)
 		sum += scale(_pinfo->controls[i].scaler, input);
 	}
 
-	*outputs = scale(_pinfo->output_scaler, sum);
+        *outputs = scale(_pinfo->output_scaler, sum);
 	return 1;
 }
 

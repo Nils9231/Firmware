@@ -34,7 +34,7 @@
     <!-- launches PX4 SITL, Gazebo environment, and spawns vehicle -->
     <env name="PX4_SIM_MODEL" value="$(arg vehicle)" />
     <env name="PX4_ESTIMATOR" value="$(arg est)" />
-<group ns="uav2">
+<group ns="uuv2">
     <!-- PX4 SITL -->
     <arg unless="$(arg interactive)" name="px4_command_arg1" value="-d"/>
     <arg     if="$(arg interactive)" name="px4_command_arg1" value=""/>

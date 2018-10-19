@@ -32,7 +32,7 @@
  ****************************************************************************/
 
 /**
- * @file uuv_circ_leader_app.cpp
+ * @file uuv_leafo_app.cpp
  *
  *
  * @author Nils Timmermann <Nils.Timmermann@tuhh.de>
@@ -64,12 +64,13 @@
 #include <uORB/topics/actuator_controls.h>              // this topic gives the actuators control input
 #include <uORB/topics/vehicle_attitude.h>               // this topic holds the orientation of the hippocampus
 #include <uORB/topics/vehicle_local_position.h>         // this topic holds all position and speed information
-#include <uORB/topics/position_setpoint.h>            // this Topic sets the Leader Position for the follower
-extern "C" __EXPORT int uuv_circ_leader_app_main(int argc, char *argv[]);
+extern "C" __EXPORT int uuv_leafo_app_main(int argc, char *argv[]);
 
-int uuv_circ_leader_app_main(int argc, char *argv[])
+int uuv_leafo_app_main(int argc, char *argv[])
 {
-        PX4_INFO("auv_hippocampus_circ_leader_app has been started!");
+
+
+        PX4_INFO("auv_hippocampus_leader_app has been started!");
 
         /* subscribe to sensor_combined topic */
         int sensor_sub_fd = orb_subscribe(ORB_ID(sensor_combined));
@@ -86,26 +87,19 @@ int uuv_circ_leader_app_main(int argc, char *argv[])
         /* limit the update rate to 5 Hz */
         orb_set_interval(vehicle_local_position_sub_fd, 200);
 
-        /* subscribe to position_setpoint topic */
-        int position_setpoint_sub_fd = orb_subscribe(ORB_ID(position_setpoint));
-        /* limit the update rate to 5 Hz */
-        orb_set_interval(position_setpoint_sub_fd, 200);
-
         /* advertise to actuator_control topic */
         struct actuator_controls_s act;
         memset(&act, 0, sizeof(act));
         orb_advert_t act_pub = orb_advertise(ORB_ID(actuator_controls_0), &act);
 
         /* one could wait for multiple topics with this technique, just using one here */
-        px4_pollfd_struct_t fds[4] = {};
+        px4_pollfd_struct_t fds[3] = {};
         fds[0].fd = sensor_sub_fd;
         fds[0].events = POLLIN;
         fds[1].fd = vehicle_attitude_sub_fd;
         fds[1].events = POLLIN;
         fds[2].fd = vehicle_local_position_sub_fd;
         fds[2].events = POLLIN;
-        fds[3].fd = position_setpoint_sub_fd;
-        fds[3].events = POLLIN;
 
 
 
@@ -113,78 +107,79 @@ int uuv_circ_leader_app_main(int argc, char *argv[])
 
 
         int error_counter = 0;
-        double phi_target = 0;
+        double phi_target;
         double phi_act;
-        double theta_act=0;//, theta_bef=0;
-        double theta_bct=0;
-        double K=4;                // proportional Gain for first order Steerer
-        double Kdes = 0;            // proportional Gain for desired circ middlepoint in first order steerer;
-        double Yconst = 0.15;          // constant offset on Yaw_rate actuator input
-        //double Kold=0.5;            // Influence of old yaw_rate controllerinput
-        double Kpy = 10;             // proportional Gain Yaw_rate
+        double theta_target;
+        double theta_act;
+        double alpha;               // angle between X and XY-Projection ov Trajectory
+        double beta;                // angle between Trajectory an XY-Plane
+        double r2x;                 // nearest point aon trajectory in local coordinates
+        double Kt = 7.5;            // Softness Gain (Trajectory controll Target Point)
+        double Kpe =5;              // proportional Gain theta
         double Kpf =2;              // proportional Gain phi
         double Kpro =5;             // proportional Gain eta
-        double Kiy = 0;             // integrator Gain Yaw_rate
+        double Kie =0.2;              // integrator Gain theta
         double Kif =2;              // integrator Gain phi
         double Kiro =3;             // integrator Gain eta
-        double Kdy =5;             // differentiator Gain Yaw_rate
+        double Kde =10;              // differentiator Gain theta
         double Kdf =4;              // differentiator Gain phi
         double Kdro =4;             // differentiator Gain eta
-        double Ksp= 0.075;           // speed Gain
-        double psi=0;                 // yawspeed controller
-        double nu;                  // steering controller
+        double Ksp= 0.5;         // speed Gain
+        double nu;                  // yaw controller
         double mu;                  // pitch contoller
         double eta;                 // roll controller
         double dt0=0, dt1=0;        // Steptimedifference
-        double ro, p, y=0, t;//, roa, pa, ya, ta, regmax;          //roll pitch yaw trhrust parameters.
-        //double y0=0,y1=0,y2=0,y3=0,y4=0;      //levelparameters
-        double dyspd0=0, dyspd1=0;  // yawspeed error (0: state before, 1: actual error)
+        double Ldelr;               // Distance from Boat to target Point
+        double ro, p, y, t;//, roa, pa, ya, ta, regmax;          //roll pitch yaw trhrust parameters.
+        double e1=0, e0=0;          // Errors theta (0: state before, 1: actual error)
         double f1=0, f0=0;          // Errors phi (0: state before, 1: actual error)
         double ro1=0, ro0=0;        // Errors eta (0: state before, 1: actual error)
-        double de=0;                // Error differende yawspeed
+        double de=0;                // Error difference theta
         double df=0;                // Error difference phi
         double dro=0;               // Error difference eta
-        double Ie=0;                // indegrated Error yawspeed
+        double Ie=0;                // Integrated Error theta
         double If=0;                // integrated Error phi
         double Iro=0;               // integrated Error eta
-        //double u;                   // second order steerer
-        double ome0 = 0.25;         // desired angular speed
-        double RAD = 1/ome0;        // cicle Radius
-        double yawspd=0;            // yawspeed
-        //int N  =2;                  // Number of uuvs
-        //int ID = 1;                 // Vehicle ID
+
+        //Trajectory to plan:
+        matrix::Vector3<double> T0(1,0,0);
+        matrix::Vector3<double> T;
+        PX4_INFO("T:\t%8.4f\t%8.4f\t%8.4f",
+                 (double)T0(0),
+                 (double)T0(1),
+                 (double)T0(2));
+        T(0)=T0(0)/sqrt(pow(T0(0),2)+pow(T0(1),2)+pow(T0(2),2));
+        T(1)=T0(1)/sqrt(pow(T0(0),2)+pow(T0(1),2)+pow(T0(2),2));
+        T(2)=T0(2)/sqrt(pow(T0(0),2)+pow(T0(1),2)+pow(T0(2),2));
+        PX4_INFO("T:\t%8.4f\t%8.4f\t%8.4f",
+                 (double)T(0),
+                 (double)T(1),
+                 (double)T(2));
+        //Trajectory direction angles
+        alpha=atan2(T(1),T(0));                                             // Angle between global X-Axis and Trajectory Projection in X-Y-Plane
+        beta=atan2(T(2),sqrt(pow(T(0),2)+pow(T(1),2)));                     // Angle between global XY-Plane and Trajectory
 
         matrix::Vector3<double> x_B(0, 0, 0);     // orientation body x-axis (in world coordinates)
         matrix::Vector3<double> y_B(0, 0, 0);     // orientation body y-axis (in world coordinates)
         matrix::Vector3<double> z_B(0, 0, 0);     // orientation body z-axis (in world coordinates)
 
         matrix::Vector3<double> r(0, 0, 0);       // local position vector
-        matrix::Vector3<double> v1;               // local speed vectors
-        //matrix::Vector3<double> v2;               // local speed vectors
-        matrix::Vector3<double> T(0, 0, 0);       // Position Vektor of other Boats
 
+        matrix::Vector3<double> RT(0,0,0);        // nearest point on Tajectory in global coordinates
 
+        matrix::Vector3<double> Rtarget(0,0,0);   // Target vector
 
-        matrix::Vector3<double> c1;                // own circ-middlepoint vector
-        matrix::Vector3<double> c2;                // friend circ-middlepoint vector
-        matrix::Vector3<double> c3;                // desired circ-middlepoint vector
+        matrix::Vector3<double> rctr(0,0,0);      // direction to Rtarget from boat in global coordinates
 
-
+        matrix::Vector3<double> delr(0,0,0);      // controll help
 
 
    for (int i = 0; i < 300; i++) {
                 // next step
                 dt0 = dt1;
+                e0=e1;
                 f0=f1;
                 ro0=ro1;
-                dyspd0=dyspd1;
-                //y4=y3;
-                //y3=y2;
-                //y2=y1;
-                //y1=y0;
-                //y0=y;
-
-                //theta_bef=theta_act;
 
                 /* wait for sensor update of 1 file descriptor for 1000 ms (1 second) */
                 int poll_ret = px4_poll(fds, 1, 1000);
@@ -236,9 +231,9 @@ int uuv_circ_leader_app_main(int argc, char *argv[])
                                 z_B(0)=R(1, 2);
                                 z_B(1)=R(0, 2);
                                 z_B(2)=-R(2, 2);     // orientation body z-axis (in world coordinates)
-                                yawspd = raw_ctrl_state.yawspeed;
 
-                                /*PX4_INFO("x_B:\t%8.4f\t%8.4f\t%8.4f",
+
+                                PX4_INFO("x_B:\t%8.4f\t%8.4f\t%8.4f",
                                          (double)x_B(0),
                                          (double)x_B(1),
                                          (double)x_B(2));
@@ -252,7 +247,7 @@ int uuv_circ_leader_app_main(int argc, char *argv[])
                                          (double)z_B(0),
                                          (double)z_B(1),
                                          (double)z_B(2));
-*/
+
 
                                 /* obtained data for the third file descriptor */
                                 struct vehicle_local_position_s raw_position;
@@ -263,109 +258,105 @@ int uuv_circ_leader_app_main(int argc, char *argv[])
                                 r(2)=-raw_position.z;
 
                                 dt1=(double)raw_position.timestamp/(double)1000000; // actual steptime
-
+                                if(i==0){
+                                    dt0=dt1;
+                                }
                                 // printing the sensor data into the terminal
                                 PX4_INFO("POS:\t%8.4f\t%8.4f\t%8.4f",
                                          (double)r(0),
                                          (double)r(1),
                                          (double)r(2));
                                 // local position Vector r in global coordinates
-                                struct position_setpoint_s possp;
-                                orb_copy(ORB_ID(position_setpoint), position_setpoint_sub_fd, &possp);
-                                T(0)=possp.y+1;
-                                T(1)=possp.x;
-                                T(2)=-possp.z;
-                                theta_bct=atan2(cos(possp.yaw),sin(possp.yaw));
-                                //theta_bct = possp.yaw;
-                                PX4_INFO("LPos:\t%8.4f\t%8.4f\t%8.4f\t%8.4f",
-                                         (double)T(0),
-                                         (double)T(1),
-                                         (double)T(2),
-                                         (double)theta_bct);
-                                // local position Vector T in global coordinates
 
 
 
                         }
                 }
 
-                // Actual Boat-Headings
+                // Actual Boat-Heading
                 phi_act=atan2(x_B(2),sqrt(pow(x_B(0),2)+pow(x_B(1),2)));            // angle between global XY-Plane and Boat-X-Axis
                 theta_act=atan2(x_B(1),x_B(0));                                     // angle between global and Boat X-Axis
 
-                //Actual Velocity vectors
-                v1(0)=cos(theta_act);
-                v1(1)=sin(theta_act);
-                v1(2)=0;
-                //v2(0)=cos(theta_bct);
-                //v2(1)=sin(theta_bct);
-                //v2(2)=0;
+                // nearest Point on Trajectory in Trajectory coordinates
+                r2x=r(0)*cos(alpha)*cos(beta)+r(1)*sin(alpha)*cos(beta)+r(2)*sin(beta);
 
-                //circ middlepoints
-                c1(0)=r(0)+RAD*sin(theta_act);
-                c1(1)=r(1)-RAD*cos(theta_act);
-                c1(2)=0;
-                c2(0)=T(0)+RAD*sin(theta_bct);
-                c2(1)=T(1)-RAD*cos(theta_bct);
-                c2(2)=0;
-                c3(0)=2.5;
-                c3(1)=0;
-                c3(2)=0;
-                c2(0)=0;
-                c2(1)=0;
-                c2(2)=0;
+                // nearest Point on Trajectory in global coordinates
+                RT(0)=r2x*cos(alpha)*cos(beta);
+                RT(1)=r2x*sin(alpha)*cos(beta);
+                RT(2)=r2x*sin(beta);
 
-
-
-                PX4_INFO("c1:\t%8.4f\t%8.4f\t%8.4f",
-                         (double)c1(0),
-                         (double)c1(1),
-                         (double)c1(2));
-                PX4_INFO("c2:\t%8.4f\t%8.4f\t%8.4f",
-                         (double)c2(0),
-                         (double)c2(1),
-                         (double)c2(2));
-                PX4_INFO("c3:\t%8.4f\t%8.4f\t%8.4f",
-                         (double)c3(0),
-                         (double)c3(1),
-                         (double)c3(2));
-
-
-                // steering controller
-                nu = ome0*(1+(1/(2+Kdes))*K*((c1(0)-c2(0)-Kdes*c3(0))*v1(0)+(c1(1)-c2(1)-Kdes*c3(1))*v1(1)+(c1(2)-c2(2)-Kdes*c3(2))*v1(2)));
-                //u =Kp*(nu-yawspeed);
-
-                PX4_INFO("yawspd:\t%8.4f",
-                         (double)yawspd);
-
-                PX4_INFO("nu:\t%8.4f",
-                         (double)nu);
-
-                //error definitions
-                dyspd1 = nu-yawspd;
 /*
-                PX4_INFO("dyspd:\t%8.4f",
-                         (double)dyspd1);
+                PX4_INFO("RT:\t%8.4f\t%8.4f\t%8.4f",
+                         (double)RT(0),
+                         (double)RT(1),
+                         (double)RT(2));
 */
+                // controller target Point
+                Rtarget = RT+Kt*T;
+/*
+                PX4_INFO("Rtarget:\t%8.4f\t%8.4f\t%8.4f",
+                         (double)Rtarget(0),
+                         (double)Rtarget(1),
+                         (double)Rtarget(2));
+*/
+                // controller direction Vector
+                rctr=Rtarget-r;
+/*
+                PX4_INFO("rctr:\t%8.4f\t%8.4f\t%8.4f",
+                         (double)rctr(0),
+                         (double)rctr(1),
+                         (double)rctr(2));
+*/
+                // nearest distance Vector to trajectory
+                delr = RT-r;                                                        // Vector
+                Ldelr = sqrt(pow(delr(0),2)+pow(delr(1),2)+pow(delr(2),2));         // Distance
+
+                // Controller Target Angles of rctr
+                theta_target = atan2(rctr(1),rctr(0));                              // angle between global X-Axis and rctr
+                phi_target = atan2(rctr(2),sqrt(pow(rctr(0),2)+pow(rctr(1),2)));    // angle betreen global XY-Plane and rctr
+
+/*
+                PX4_INFO("phi_act:\t%8.4f",
+                         (double)phi_act);
+                PX4_INFO("phi_target:\t%8.4f",
+                         (double)phi_target);
+                PX4_INFO("theta_act:\t%8.4f",
+                         (double)theta_act);
+                PX4_INFO("theta_target:\t%8.4f",
+                         (double)theta_target);
+                PX4_INFO("theta-theta:\t%8.4f",
+                         (double)theta_target-theta_act);
+*/                // actual errors
+                if ((theta_target-theta_act)>1.5){
+                    e1=1;
+                }
+                else if ((theta_target-theta_act)<-1.5){
+                    e1=-1;
+                }
+                else{
+                    e1 = sin(theta_target-theta_act);                                   // Yaw
+                }
                 f1 = sin(phi_target-phi_act);                                       // Pitch
                 ro1 = sin(3.1415-atan2(y_B(2),sqrt(pow(y_B(0),2)+pow(y_B(1),2))));  // Roll
-
+                //PX4_INFO("e1:\t%8.4f",
+                //         (double)e1);
                 // Differentiations
-                de = (dyspd1-dyspd0)/(dt1-dt0);
+                de = (e1-e0)/(dt1-dt0);
                 df = (f1-f0)/(dt1-dt0);
                 dro = (ro1-ro0)/(dt1-dt0);
 
                 // Integrations
-                Ie += dyspd1*(dt1-dt0);
+                Ie += e1*(dt1-dt0);
                 If += f1*(dt1-dt0);
                 Iro+= ro1*(dt1-dt0);
 
                 if(i<=2){
+                    nu =0;
                     mu=0;
                     eta=0;
                 }
                 else{
-                psi = Kpy*dyspd1+Kiy*Ie+Kdy*de;
+                nu = Kpe*e1+Kie*Ie+Kde*de;
                 mu = Kpf*f1+Kif*If+Kdf*df;
                 eta = Kpro*ro1+Kiro*Iro+Kdro*dro;
                 }
@@ -373,9 +364,8 @@ int uuv_circ_leader_app_main(int argc, char *argv[])
                 // Controller arguments transformed in Boat-Coordinates
                 ro= eta;//(eta-nu*x_B(2));
                 p= mu;//mu-nu*y_B(2);
-                //y = Kold*(y0+y1+y2+y3+y4)+psi;//-nu*-z_B(2);
-                y = Yconst +psi;//-nu*-z_B(2);
-                t= Ksp;//ro/3+p/3+y/3;
+                y= -nu;//-nu*-z_B(2);
+                t= (Ksp*(1+Ldelr));//ro/3+p/3+y/3;
 
 
                 // Equalized Controller Arguments
@@ -385,12 +375,13 @@ int uuv_circ_leader_app_main(int argc, char *argv[])
                 // ya= 0.75*y/regmax;
                 // ta= 0.25;//t/regmax;
 
-
-                /*PX4_INFO("ro:\t%8.4f",
+                PX4_INFO("Ldelr:\t%8.4f",
+                         (double)Ldelr);
+                PX4_INFO("ro:\t%8.4f",
                          (double)ro);
                 PX4_INFO("p:\t%8.4f",
                          (double)p);
-                */PX4_INFO("y:\t%8.4f",
+                PX4_INFO("y:\t%8.4f",
                          (double)y);
                 PX4_INFO("t:\t%8.4f \n",
                          (double)t);
@@ -402,10 +393,11 @@ int uuv_circ_leader_app_main(int argc, char *argv[])
                 act.control[2] = y;           // yaw
                 act.control[3] = t;		// thrust
                 orb_publish(ORB_ID(actuator_controls_0), act_pub, &act);
+
         }
 
 
-        PX4_INFO("Exiting uuv_circ_leader_app!");
+        PX4_INFO("Exiting uuv_leader_app!");
 
 
         return 0;
