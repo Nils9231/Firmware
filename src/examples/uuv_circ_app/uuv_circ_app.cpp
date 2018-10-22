@@ -47,11 +47,16 @@
 #include <poll.h>
 #include <string.h>
 #include <math.h>
+#include <time.h>
+
+// drivers
+#include <drivers/drv_hrt.h>
 
 // system libraries
 #include <parameters/param.h>
 #include <systemlib/err.h>
 #include <perf/perf_counter.h>
+#include <systemlib/mavlink_log.h>
 
 // internal libraries
 #include <lib/mathlib/mathlib.h>
@@ -65,6 +70,7 @@
 #include <uORB/topics/vehicle_attitude.h>               // this topic holds the orientation of the hippocampus
 #include <uORB/topics/vehicle_local_position.h>         // this topic holds all position and speed information
 #include <uORB/topics/position_setpoint.h>            // this Topic sets the Leader Position for the follower
+#include <uORB/topics/parameter_update.h>
 
 
 extern "C" __EXPORT int uuv_circ_app_main(int argc, char *argv[]);
@@ -80,20 +86,69 @@ private:
      int		_main_task;			/**< handle for task */
      orb_advert_t	_mavlink_log_pub;
      orb_advert_t	_actuator_pub;
+     orb_advert_t       _pose_pub;
      int                _sensor_sub;
+     int                _params_sub;
      int                _vehicle_attitude_sub;
      int                _vehicle_local_position_sub;
      int                _position_setpoint_sub;
      struct actuator_controls_s _actuators;
 
-     /**
-      * Set the actuators
-      */
+
+     struct{
+         param_t NUM;               // Number of Vehicles
+         param_t Order;             // Ordering Number of Vehicle
+         param_t Kcirc;             // proportional Gain for first order Steerer
+         param_t Kdes;              // proportional Gain for desired circ middlepoint in first order steerer;
+         param_t Yconst;            // constant offset on Yaw_rate actuator input
+         param_t Ksp;               // Speed constand
+         param_t Kpy;               // proportional Gain Yaw_rate
+         param_t Kpf;               // proportional Gain phi
+         param_t Kpro;              // proportional Gain eta
+         param_t Kiy;               // integrator Gain Yaw_rate
+         param_t Kif;               // integrator Gain phi
+         param_t Kiro;              // integrator Gain eta
+         param_t Kdy;               // differentiator Gain Yaw_rate
+         param_t Kdf;               // differentiator Gain phi
+         param_t Kdro;              // differentiator Gain eta
+         param_t cdes_x;            // desired Circle Middelpoint
+         param_t cdes_y;
+         param_t cdes_z;
+         param_t ome0;              // desired angular speed
+     } _params_handles;
+
+     struct{
+         int NUM;
+         int Order;
+         double Kcirc;              // proportional Gain for first order Steerer
+         double Kdes;               // proportional Gain for desired circ middlepoint in first order steerer;
+         double Yconst;             // constant offset on Yaw_rate actuator input
+         double Ksp;                // speed constant
+         double Kpy;                // proportional Gain Yaw_rate
+         double Kpf;                // proportional Gain phi
+         double Kpro;               // proportional Gain eta
+         double Kiy;                // integrator Gain Yaw_rate
+         double Kif;                // integrator Gain phi
+         double Kiro;               // integrator Gain eta
+         double Kdy;                // differentiator Gain Yaw_rate
+         double Kdf;                // differentiator Gain phi
+         double Kdro;               // differentiator Gain eta
+         double cdes_x;             // desiresd circle Middlepoint
+         double cdes_y;
+         double cdes_z;
+         double ome0;               // desired angular speed
+     } _params;
+
      int		actuators_publish();
 
-     /**
-      * Shim for calling task_main from task_create.
-      */
+     int                parameters_update();
+
+     void               parameter_update_poll();
+
+     void               task_main();
+
+     int                actuator_publish();
+
      static int	task_main_trampoline(int argc, char *argv[]);
 
 
@@ -107,11 +162,42 @@ UUVCirc	*g_circ_app;
 
 UUVCirc::UUVCirc():
 
-        _task_should_exit(false),
-        _main_task(-1),
-        _mavlink_log_pub(nullptr),
-        _actuator_pub(nullptr),
-        _actuators {},
+    _task_should_exit(false),
+    _main_task(-1),
+    _mavlink_log_pub(nullptr),
+    _actuator_pub(nullptr),
+    _params_sub(-1),
+    _actuators {}
+{
+    // define publication settings
+    memset(&_actuators, 0, sizeof(_actuators));
+
+        // allocate parameter handles
+    _params_handles.NUM         = param_find("UUV_CIRC_NUM");       // Number of Vehicles in Cicle
+    _params_handles.Order       = param_find("UUV_CIRC_Order");     // Ordering Number of Vehicle
+    _params_handles.Kcirc       = param_find("UUV_CIRC_Kcirc");     // proportional Gain for first order Steerer
+    _params_handles.Kdes        = param_find("UUV_CIRC_Kdes");      // proportional Gain for desired circ middlepoint in first order steerer;
+    _params_handles.Yconst      = param_find("UUV_CIRC_Yconst");    // constant offset on Yaw_rate actuator input
+    _params_handles.Ksp         = param_find("UUV_CIRC_Ksp");       // speed constant
+    _params_handles.Kpy         = param_find("UUV_CIRC_Kpy");       // proportional Gain Yaw_rate
+    _params_handles.Kpf         = param_find("UUV_CIRC_Kpf");       // proportional Gain phi
+    _params_handles.Kpro        = param_find("UUV_CIRC_Kpro");      // proportional Gain eta
+    _params_handles.Kiy         = param_find("UUV_CIRC_Kiy");       // integrator Gain Yaw_rate
+    _params_handles.Kif         = param_find("UUV_CIRC_Kif");       // integrator Gain phi
+    _params_handles.Kiro        = param_find("UUV_CIRC_Kiro");      // integrator Gain eta
+    _params_handles.Kdy         = param_find("UUV_CIRC_Kdy");       // differentiator Gain Yaw_rate
+    _params_handles.Kdf         = param_find("UUV_CIRC_Kdf");       // differentiator Gain phi
+    _params_handles.Kdro        = param_find("UUV_CIRC_Kdro");      // differentiator Gain eta
+    _params_handles.cdes_x      = param_find("UUV_CIRC_cdes_x");    //desired Circ-Middlepoint
+    _params_handles.cdes_y      = param_find("UUV_CIRC_cdes_y");
+    _params_handles.cdes_z      = param_find("UUV_CIRC_cdes_z");
+    _params_handles.ome0        = param_find("UUV_CIRC_ome0");      // desired Angular speed
+
+
+    // fetch initial parameter values
+    parameters_update();
+}
+
 
 UUVCirc::~UUVCirc()
 {
@@ -138,6 +224,68 @@ UUVCirc::~UUVCirc()
       circ_app::g_circ_app = nullptr;
 }
 
+int UUVCirc::parameters_update()
+{
+        float v;
+
+        param_get(_params_handles.NUM, &v);
+        _params.NUM = v;
+        param_get(_params_handles.Order, &v);
+        _params.Order = v;
+        param_get(_params_handles.Kcirc, &v);
+        _params.Kcirc = v;
+        param_get(_params_handles.Kdes, &v);
+        _params.Kdes = v;
+        param_get(_params_handles.Yconst, &v);
+        _params.Yconst = v;
+        param_get(_params_handles.Ksp, &v);
+        _params.Ksp = v;
+        param_get(_params_handles.Kpy, &v);
+        _params.Kpy = v;
+        param_get(_params_handles.Kpf, &v);
+        _params.Kpf = v;
+        param_get(_params_handles.Kpro, &v);
+        _params.Kpro = v;
+        param_get(_params_handles.Kiy, &v);
+        _params.Kiy = v;
+        param_get(_params_handles.Kif, &v);
+        _params.Kif = v;
+        param_get(_params_handles.Kiro, &v);
+        _params.Kiro = v;
+        param_get(_params_handles.Kdy, &v);
+        _params.Kdy = v;
+        param_get(_params_handles.Kdf, &v);
+        _params.Kdf = v;
+        param_get(_params_handles.Kdro, &v);
+        _params.Kdro = v;
+        param_get(_params_handles.cdes_x, &v);
+        _params.cdes_x = v;
+        param_get(_params_handles.cdes_y, &v);
+        _params.cdes_y = v;
+        param_get(_params_handles.cdes_z, &v);
+        _params.cdes_z = v;
+        param_get(_params_handles.ome0, &v);
+        _params.ome0 = v;
+
+
+
+        return OK;
+}
+
+void UUVCirc::parameter_update_poll()
+{
+    bool updated;
+
+    /* Check if parameters have changed */
+    orb_check(_params_sub, &updated);
+
+    if (updated){
+        struct parameter_update_s param_update;
+        orb_copy(ORB_ID(parameter_update), _params_sub, &param_update);
+        parameters_update();
+    }
+}
+
 int
 UUVCirc::start()
 {
@@ -148,7 +296,7 @@ UUVCirc::start()
                                     SCHED_DEFAULT,
                                     SCHED_PRIORITY_DEFAULT + 15,
                                     1500,
-                                    (px4_main_t)&uuv_circ_app::task_main_trampoline,
+                                    (px4_main_t)&UUVCirc::task_main_trampoline,
                                     nullptr);
 
     if (_main_task < 0) {
@@ -166,7 +314,11 @@ UUVCirc::actuators_publish()
 
         // lazily publish _actuators only once available
         if (_actuator_pub != nullptr) {
+                PX4_INFO("ACT:\t%8.4f\t%8.4f",
+                        (double)_actuators.control[2],
+                        (double)_actuators.control[3]);
                 return orb_publish(ORB_ID(actuator_controls_0), _actuator_pub, &_actuators);
+
 
         } else {
                 _actuator_pub = orb_advertise(ORB_ID(actuator_controls_0), &_actuators);
@@ -179,6 +331,7 @@ UUVCirc::actuators_publish()
                 }
         }
 }
+
 
 
 void
@@ -198,27 +351,25 @@ UUVCirc::task_main()
         /* subscribe to position_setpoint topic */
         _position_setpoint_sub = orb_subscribe(ORB_ID(position_setpoint));
 
-        bool updated = false;
+
+        // wakeup source(s)
+        px4_pollfd_struct_t fds[4];
+
+        // Setup of loop
+        fds[0].fd = _sensor_sub;
+        fds[0].events = POLLIN;
+        fds[1].fd = _vehicle_attitude_sub;
+        fds[1].events = POLLIN;
+        fds[2].fd = _vehicle_local_position_sub;
+        fds[2].events = POLLIN;
+        fds[3].fd = _position_setpoint_sub;
+        fds[3].events = POLLIN;
 
         int error_counter = 0;
         double phi_target = 0;
         double phi_act;
         double theta_act=0;//, theta_bef=0;
         double theta_bct=0;
-        double K=1;                // proportional Gain for first order Steerer
-        double Kdes = 0;            // proportional Gain for desired circ middlepoint in first order steerer;
-        double Yconst = 0.0;          // constant offset on Yaw_rate actuator input
-        //double Kold=0.5;            // Influence of old yaw_rate controllerinput
-        double Kpy = 1;             // proportional Gain Yaw_rate
-        double Kpf =2;              // proportional Gain phi
-        double Kpro =5;             // proportional Gain eta
-        double Kiy = 0;             // integrator Gain Yaw_rate
-        double Kif =2;              // integrator Gain phi
-        double Kiro =3;             // integrator Gain eta
-        double Kdy =0;             // differentiator Gain Yaw_rate
-        double Kdf =4;              // differentiator Gain phi
-        double Kdro =4;             // differentiator Gain eta
-        double Ksp= 0.5;           // speed Gain
         double psi=0;                 // yawspeed controller
         double nu;                  // steering controller
         double mu;                  // pitch contoller
@@ -236,12 +387,9 @@ UUVCirc::task_main()
         double If=0;                // integrated Error phi
         double Iro=0;               // integrated Error eta
         //double u;                   // second order steerer
-        double ome0 = 0.25;         // desired angular speed
-        double RAD = 1/ome0;        // cicle Radius
         double yawspd=0;            // yawspeed
 
 
-        param_t NUM = param_find("UUV_CIRC_NUM");
 
         matrix::Vector3<double> x_B(0, 0, 0);     // orientation body x-axis (in world coordinates)
         matrix::Vector3<double> y_B(0, 0, 0);     // orientation body y-axis (in world coordinates)
@@ -259,13 +407,10 @@ UUVCirc::task_main()
         matrix::Vector3<double> c3;                // desired circ-middlepoint vector
 
 
-        struct parameter_update_s update;
-        memset(&update, 0, sizeof(update));
-        int parameter_update_sub = orb_subscribe(ORB_ID(parameter_update));
-
         while(!_task_should_exit) {
                 // next step
                 dt0 = dt1;
+                dt1=hrt_absolute_time()/(double)1000000; // actual steptime
                 f0=f1;
                 ro0=ro1;
                 dyspd0=dyspd1;
@@ -297,20 +442,10 @@ UUVCirc::task_main()
                 } else {
 
                         if (fds[0].revents & POLLIN) {
-                                /* obtained data for the first file descriptor */
-                                struct sensor_combined_s raw_sensor;
-                                /* copy sensors raw data into local buffer */
-                                orb_copy(ORB_ID(sensor_combined), sensor_sub_fd, &raw_sensor);
-                                // printing the sensor data into the terminal
-/*                              PX4_INFO("Acc:\t%8.4f\t%8.4f\t%8.4f",
-                                         (double)raw_sensor.accelerometer_m_s2[0],
-                                         (double)raw_sensor.accelerometer_m_s2[1],
-                                         (double)raw_sensor.accelerometer_m_s2[2]);
-*/
                                 /* obtained data for the second file descriptor */
                                 struct vehicle_attitude_s raw_ctrl_state;
                                 /* copy sensors raw data into local buffer */
-                                orb_copy(ORB_ID(vehicle_attitude), vehicle_attitude_sub_fd, &raw_ctrl_state);
+                                orb_copy(ORB_ID(vehicle_attitude), _vehicle_attitude_sub, &raw_ctrl_state);
 
                                 // get current rotation matrix from control state quaternions, the quaternions are generated by the
                                 // attitude_estimator_q application using the sensor data
@@ -348,31 +483,31 @@ UUVCirc::task_main()
                                 /* obtained data for the third file descriptor */
                                 struct vehicle_local_position_s raw_position;
                                 /* copy sensors raw data into local buffer */
-                                orb_copy(ORB_ID(vehicle_local_position), vehicle_local_position_sub_fd, &raw_position);
+                                orb_copy(ORB_ID(vehicle_local_position), _vehicle_local_position_sub, &raw_position);
                                 r(0)=raw_position.y;
                                 r(1)=raw_position.x;
                                 r(2)=-raw_position.z;
 
-                                dt1=(double)raw_position.timestamp/(double)1000000; // actual steptime
+
 
                                 // printing the sensor data into the terminal
-                                PX4_INFO("POS:\t%8.4f\t%8.4f\t%8.4f",
+                                /*PX4_INFO("POS:\t%8.4f\t%8.4f\t%8.4f",
                                          (double)r(0),
                                          (double)r(1),
-                                         (double)r(2));
+                                         (double)r(2)); */
                                 // local position Vector r in global coordinates
                                 struct position_setpoint_s possp;
-                                orb_copy(ORB_ID(position_setpoint), position_setpoint_sub_fd, &possp);
+                                orb_copy(ORB_ID(position_setpoint), _position_setpoint_sub, &possp);
                                 T(0)=possp.y+1;
                                 T(1)=possp.x;
                                 T(2)=-possp.z;
                                 theta_bct=atan2(cos(possp.yaw),sin(possp.yaw));
                                 //theta_bct = possp.yaw;
-                                PX4_INFO("LPos:\t%8.4f\t%8.4f\t%8.4f\t%8.4f",
+                                /*PX4_INFO("LPos:\t%8.4f\t%8.4f\t%8.4f\t%8.4f",
                                          (double)T(0),
                                          (double)T(1),
                                          (double)T(2),
-                                         (double)theta_bct);
+                                         (double)theta_bct);    */
                                 // local position Vector T in global coordinates
 
 
@@ -393,21 +528,19 @@ UUVCirc::task_main()
                 //v2(2)=0;
 
                 //circ middlepoints
-                c1(0)=r(0)+RAD*sin(theta_act);
-                c1(1)=r(1)-RAD*cos(theta_act);
+                c1(0)=r(0)+sin(theta_act)/_params.ome0;
+                c1(1)=r(1)-cos(theta_act)/_params.ome0;
                 c1(2)=0;
-                c2(0)=T(0)+RAD*sin(theta_bct);
-                c2(1)=T(1)-RAD*cos(theta_bct);
+                c2(0)=T(0)+sin(theta_bct)/_params.ome0;
+                c2(1)=T(1)-cos(theta_bct)/_params.ome0;
                 c2(2)=0;
-                c3(0)=2.5;
-                c3(1)=0;
-                c3(2)=0;
-                c2(0)=0;
-                c2(1)=0;
-                c2(2)=0;
+                c3(0)=_params.cdes_x;
+                c3(1)=_params.cdes_y;
+                c3(2)=_params.cdes_z;
 
 
 
+/*
                 PX4_INFO("c1:\t%8.4f\t%8.4f\t%8.4f",
                          (double)c1(0),
                          (double)c1(1),
@@ -420,18 +553,15 @@ UUVCirc::task_main()
                          (double)c3(0),
                          (double)c3(1),
                          (double)c3(2));
-
+*/
 
                 // steering controller
-                nu = ome0*(1+(1/(NUM+Kdes))*K*((c1(0)-c2(0)-Kdes*c3(0))*v1(0)+(c1(1)-c2(1)-Kdes*c3(1))*v1(1)+(c1(2)-c2(2)-Kdes*c3(2))*v1(2)));
+                nu = _params.ome0*(1+(1/(_params.NUM+_params.Kdes))*_params.Kcirc*((c1(0)-c2(0)-_params.Kdes*c3(0))*v1(0)+(c1(1)-c2(1)-_params.Kdes*c3(1))*v1(1)+(c1(2)-c2(2)-_params.Kdes*c3(2))*v1(2)));
                 //u =Kp*(nu-yawspeed);
-
+/*
                 PX4_INFO("yawspd:\t%8.4f",
                          (double)yawspd);
-
-                PX4_INFO("nu:\t%8.4f",
-                         (double)nu);
-
+*/
                 //error definitions
                 dyspd1 = nu-yawspd;
 /*
@@ -440,6 +570,7 @@ UUVCirc::task_main()
 */
                 f1 = sin(phi_target-phi_act);                                       // Pitch
                 ro1 = sin(3.1415-atan2(y_B(2),sqrt(pow(y_B(0),2)+pow(y_B(1),2))));  // Roll
+
 
                 // Differentiations
                 de = (dyspd1-dyspd0)/(dt1-dt0);
@@ -451,22 +582,17 @@ UUVCirc::task_main()
                 If += f1*(dt1-dt0);
                 Iro+= ro1*(dt1-dt0);
 
-                if(i<=2){
-                    mu=0;
-                    eta=0;
-                }
-                else{
-                psi = Kpy*dyspd1+Kiy*Ie+Kdy*de;
-                mu = Kpf*f1+Kif*If+Kdf*df;
-                eta = Kpro*ro1+Kiro*Iro+Kdro*dro;
-                }
+                psi = _params.Kpy*dyspd1+_params.Kiy*Ie+_params.Kdy*de;
+                mu = _params.Kpf*f1+_params.Kif*If+_params.Kdf*df;
+                eta = _params.Kpro*ro1+_params.Kiro*Iro+_params.Kdro*dro;
 
                 // Controller arguments transformed in Boat-Coordinates
                 ro= eta;//(eta-nu*x_B(2));
                 p= mu;//mu-nu*y_B(2);
                 //y = Kold*(y0+y1+y2+y3+y4)+psi;//-nu*-z_B(2);
-                y = Yconst +psi;//-nu*-z_B(2);
-                t= Ksp;//ro/3+p/3+y/3;
+                y = _params.Yconst +psi;//-nu*-z_B(2);
+                t= _params.Ksp;//ro/3+p/3+y/3;
+
 
 
                 // Equalized Controller Arguments
@@ -481,11 +607,11 @@ UUVCirc::task_main()
                          (double)ro);
                 PX4_INFO("p:\t%8.4f",
                          (double)p);
-                */PX4_INFO("y:\t%8.4f",
+                PX4_INFO("y:\t%8.4f",
                          (double)y);
                 PX4_INFO("t:\t%8.4f \n",
                          (double)t);
-
+*/
 
                 // Give actuator input to the HippoC
                 _actuators.control[0] = ro*0;         // roll
@@ -493,13 +619,15 @@ UUVCirc::task_main()
                 _actuators.control[2] = y;           // yaw
                 _actuators.control[3] = t;		// thrust
                 actuators_publish();
+
+                parameter_update_poll();
         }
 
 
-        PX4_INFO("Exiting uuv_circ_leader_app!");
+        PX4_INFO("Exiting uuv_circ_app!");
 
 
-        return 0;
+
 }
 
 int
@@ -519,6 +647,7 @@ int uuv_circ_app_main(int argc, char *argv[])
 {
         if (argc < 2) {
                 usage();
+                return 1;
         }
 
         if (!strcmp(argv[1], "start")) {
@@ -527,7 +656,7 @@ int uuv_circ_app_main(int argc, char *argv[])
                         errx(1, "already running");
                 }
 
-                circ_app::g_circ_app = new uuv_circ;
+                circ_app::g_circ_app = new UUVCirc;
 
                 if (circ_app::g_circ_app == nullptr) {
                         errx(1, "alloc failed");

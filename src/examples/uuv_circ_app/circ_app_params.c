@@ -39,21 +39,6 @@
  * @author Nils Timmermann <nils.timmermann@tuhh.de>
  */
 
-
-/**
- * Leader or Follower ID
- *
- * ID = 1 --> Leader 
- * ID >1  --> Followers
- * 
- * @min 1
- * @max 5
- * @increment 1
- * @reboot_required true 1
- * @group UUV_CIRC
- */
-//PARAM_DEFINE_FLOAT(UUV_CIRC_LEAFO, 0f);
-
 /**
  * Number of vehicles
  *
@@ -62,7 +47,228 @@
  * @min 1
  * @max 5
  * @increment 1
- * @reboot_required true 1
+ * @reboot_required true 0
  * @group UUV_CIRC
  */
 PARAM_DEFINE_FLOAT(UUV_CIRC_NUM, 2f);
+
+/**
+ * Vehicle Order in Row
+ * 
+ * to adjust angle failure vor same distance on circle
+ *
+ * @min 1
+ * @max 5
+ * @increment 1
+ * @reboot_required true 0
+ * @group UUV_CIRC
+ */
+PARAM_DEFINE_FLOAT(UUV_CIRC_Order, 2f);
+ 
+/**
+ * Proportional Gain of Midllepoint error
+ * 
+ * influence of midllepoint error on target yaw_rate
+ *
+ * @min 0
+ * @increment 0.01
+ * @reboot_required true 0
+ * @group UUV_CIRC
+ */
+PARAM_DEFINE_FLOAT(UUV_CIRC_Kcirc, 1f);
+
+
+/**
+ * Proportional Gain of Desired middlepoint
+ * 
+ * Influence on Middlepoint error of desired Middlepoint
+ *
+ * @min 0
+ * @increment 0.01
+ * @reboot_required true 0
+ * @group UUV_CIRC
+ */
+PARAM_DEFINE_FLOAT(UUV_CIRC_Kdes, 0f);
+
+/**
+ * constant yaw_rate control input
+ * 
+ * To set a better circular motion
+ *
+ * @min 0
+ * @increment 0.01
+ * @reboot_required true 0
+ * @group UUV_CIRC
+ */
+PARAM_DEFINE_FLOAT(UUV_CIRC_Yconst, 0f);
+
+/**
+ * Proportional Speed Gain
+ * 
+ * To manage same distance on circle
+ *
+ * @min 0
+ * @increment 0.01
+ * @reboot_required true 0
+ * @group UUV_CIRC
+ */
+PARAM_DEFINE_FLOAT(UUV_CIRC_Ksp, 0.5f);
+
+/**
+ * Proportional Gain Yaw_rate PID
+ * 
+ * Yaw_rate
+ *
+ * @min 0
+ * @increment 0.01
+ * @reboot_required true 0
+ * @group UUV_CIRC
+ */
+PARAM_DEFINE_FLOAT(UUV_CIRC_Kpy, 1f);
+
+/**
+ * Proportional Gain Pitch_rate PID
+ * 
+ * Pitch_rate
+ *
+ * @min 0
+ * @increment 0.01
+ * @reboot_required true 0
+ * @group UUV_CIRC
+ */
+PARAM_DEFINE_FLOAT(UUV_CIRC_Kpf, 2f);
+
+/**
+ * Proportional Gain Roll_rate PID
+ * 
+ * Roll_rate
+ *
+ * @min 0
+ * @increment 0.01
+ * @reboot_required true 0
+ * @group UUV_CIRC
+ */
+PARAM_DEFINE_FLOAT(UUV_CIRC_Kpro, 5f);
+
+/**
+ * Integrator Gain Yaw_rate PID
+ * 
+ * Yaw_rate
+ *
+ * @min 0
+ * @increment 0.01
+ * @reboot_required true 0
+ * @group UUV_CIRC
+ */
+PARAM_DEFINE_FLOAT(UUV_CIRC_Kiy, 0f);
+
+/**
+ * Integrator Gain Pitch_rate PID
+ * 
+ * Pitch_rate
+ *
+ * @min 0
+ * @increment 0.01
+ * @reboot_required true 0
+ * @group UUV_CIRC
+ */
+PARAM_DEFINE_FLOAT(UUV_CIRC_Kif, 2f);
+
+/**
+ * Integrator Gain Roll_rate PID
+ * 
+ * Roll_rate
+ *
+ * @min 0
+ * @increment 0.01
+ * @reboot_required true 0
+ * @group UUV_CIRC
+ */
+PARAM_DEFINE_FLOAT(UUV_CIRC_Kiro, 3f); 
+
+/**
+ * Differentiator Gain Yaw_rate PID
+ * 
+ * Yaw_rate
+ *
+ * @min 0
+ * @increment 0.01
+ * @reboot_required true 0
+ * @group UUV_CIRC
+ */
+PARAM_DEFINE_FLOAT(UUV_CIRC_Kdy, 0f); 
+
+/**
+ * Differentiator Gain Pitch_rate PID
+ * 
+ * Pitch_rate
+ *
+ * @min 0
+ * @increment 0.01
+ * @reboot_required true 0
+ * @group UUV_CIRC
+ */
+PARAM_DEFINE_FLOAT(UUV_CIRC_Kdf, 4f); 
+
+/**
+ * Differentiator Gain Roll_rate PID
+ * 
+ * Roll_rate
+ *
+ * @min 0
+ * @increment 0.01
+ * @reboot_required true 0
+ * @group UUV_CIRC
+ */
+PARAM_DEFINE_FLOAT(UUV_CIRC_Kdro, 4f); 
+
+/**
+ * X-Value of desirec Cicle Middlepoint
+ * 
+ * cdes
+ *
+ * @min 0
+ * @increment 0.01
+ * @reboot_required true 0
+ * @group UUV_CIRC
+ */
+PARAM_DEFINE_FLOAT(UUV_CIRC_cdes_x, 0f); 
+
+/**
+ * Y-Value of desirec Cicle Middlepoint
+ * 
+ * cdes
+ *
+ * @min 0
+ * @increment 0.01
+ * @reboot_required true 0
+ * @group UUV_CIRC
+ */
+PARAM_DEFINE_FLOAT(UUV_CIRC_cdes_y, 0f); 
+
+/**
+ * Z-Value of desirec Cicle Middlepoint
+ * 
+ * cdes
+ *
+ * @min 0
+ * @increment 0.01
+ * @reboot_required true 0
+ * @group UUV_CIRC
+ */
+PARAM_DEFINE_FLOAT(UUV_CIRC_cdes_z, 0f); 
+ 
+/**
+ * Desired angular Velocity
+ * 
+ * ome0
+ *
+ * @min 0
+ * @increment 0.01
+ * @reboot_required true 0
+ * @group UUV_CIRC
+ */
+PARAM_DEFINE_FLOAT(UUV_CIRC_ome0, 0.25f); 
+
+
+
