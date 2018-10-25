@@ -36,5 +36,6 @@ px4_add_module(
 	STACK_MAIN 2000
 	SRCS
 		uuv_leafo_app.cpp
+                leafo_app_params.c
 	DEPENDS
 	)

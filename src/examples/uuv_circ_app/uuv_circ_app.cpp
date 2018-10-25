@@ -69,7 +69,11 @@
 #include <uORB/topics/actuator_controls.h>              // this topic gives the actuators control input
 #include <uORB/topics/vehicle_attitude.h>               // this topic holds the orientation of the hippocampus
 #include <uORB/topics/vehicle_local_position.h>         // this topic holds all position and speed information
-#include <uORB/topics/position_setpoint.h>            // this Topic sets the Leader Position for the follower
+#include <uORB/topics/uuv_one_pose.h>                   // holds poition Info for first boat
+#include <uORB/topics/uuv_two_pose.h>                   // holds poition Info for second boat
+#include <uORB/topics/uuv_three_pose.h>                 // holds poition Info for third boat
+#include <uORB/topics/uuv_four_pose.h>                  // holds poition Info for fourth boat
+#include <uORB/topics/uuv_five_pose.h>                  // holds poition Info for fifth boat
 #include <uORB/topics/parameter_update.h>
 
 
@@ -91,7 +95,11 @@ private:
      int                _params_sub;
      int                _vehicle_attitude_sub;
      int                _vehicle_local_position_sub;
-     int                _position_setpoint_sub;
+     int                _uuv_one_pose_sub;
+     int                _uuv_two_pose_sub;
+     int                _uuv_three_pose_sub;
+     int                _uuv_four_pose_sub;
+     int                _uuv_five_pose_sub;
      struct actuator_controls_s _actuators;
 
 
@@ -103,14 +111,14 @@ private:
          param_t Yconst;            // constant offset on Yaw_rate actuator input
          param_t Ksp;               // Speed constand
          param_t Kpy;               // proportional Gain Yaw_rate
-         param_t Kpf;               // proportional Gain phi
-         param_t Kpro;              // proportional Gain eta
+         //param_t Kpf;               // proportional Gain phi
+         //param_t Kpro;              // proportional Gain eta
          param_t Kiy;               // integrator Gain Yaw_rate
-         param_t Kif;               // integrator Gain phi
-         param_t Kiro;              // integrator Gain eta
+         //param_t Kif;               // integrator Gain phi
+         //param_t Kiro;              // integrator Gain eta
          param_t Kdy;               // differentiator Gain Yaw_rate
-         param_t Kdf;               // differentiator Gain phi
-         param_t Kdro;              // differentiator Gain eta
+         //param_t Kdf;               // differentiator Gain phi
+         //param_t Kdro;              // differentiator Gain eta
          param_t cdes_x;            // desired Circle Middelpoint
          param_t cdes_y;
          param_t cdes_z;
@@ -125,14 +133,14 @@ private:
          double Yconst;             // constant offset on Yaw_rate actuator input
          double Ksp;                // speed constant
          double Kpy;                // proportional Gain Yaw_rate
-         double Kpf;                // proportional Gain phi
-         double Kpro;               // proportional Gain eta
+         //double Kpf;                // proportional Gain phi
+         //double Kpro;               // proportional Gain eta
          double Kiy;                // integrator Gain Yaw_rate
-         double Kif;                // integrator Gain phi
-         double Kiro;               // integrator Gain eta
+         //double Kif;                // integrator Gain phi
+         //double Kiro;               // integrator Gain eta
          double Kdy;                // differentiator Gain Yaw_rate
-         double Kdf;                // differentiator Gain phi
-         double Kdro;               // differentiator Gain eta
+         //double Kdf;                // differentiator Gain phi
+         //double Kdro;               // differentiator Gain eta
          double cdes_x;             // desiresd circle Middlepoint
          double cdes_y;
          double cdes_z;
@@ -174,24 +182,24 @@ UUVCirc::UUVCirc():
 
         // allocate parameter handles
     _params_handles.NUM         = param_find("UUV_CIRC_NUM");       // Number of Vehicles in Cicle
-    _params_handles.Order       = param_find("UUV_CIRC_Order");     // Ordering Number of Vehicle
-    _params_handles.Kcirc       = param_find("UUV_CIRC_Kcirc");     // proportional Gain for first order Steerer
-    _params_handles.Kdes        = param_find("UUV_CIRC_Kdes");      // proportional Gain for desired circ middlepoint in first order steerer;
-    _params_handles.Yconst      = param_find("UUV_CIRC_Yconst");    // constant offset on Yaw_rate actuator input
-    _params_handles.Ksp         = param_find("UUV_CIRC_Ksp");       // speed constant
-    _params_handles.Kpy         = param_find("UUV_CIRC_Kpy");       // proportional Gain Yaw_rate
-    _params_handles.Kpf         = param_find("UUV_CIRC_Kpf");       // proportional Gain phi
-    _params_handles.Kpro        = param_find("UUV_CIRC_Kpro");      // proportional Gain eta
-    _params_handles.Kiy         = param_find("UUV_CIRC_Kiy");       // integrator Gain Yaw_rate
-    _params_handles.Kif         = param_find("UUV_CIRC_Kif");       // integrator Gain phi
-    _params_handles.Kiro        = param_find("UUV_CIRC_Kiro");      // integrator Gain eta
-    _params_handles.Kdy         = param_find("UUV_CIRC_Kdy");       // differentiator Gain Yaw_rate
-    _params_handles.Kdf         = param_find("UUV_CIRC_Kdf");       // differentiator Gain phi
-    _params_handles.Kdro        = param_find("UUV_CIRC_Kdro");      // differentiator Gain eta
-    _params_handles.cdes_x      = param_find("UUV_CIRC_cdes_x");    //desired Circ-Middlepoint
-    _params_handles.cdes_y      = param_find("UUV_CIRC_cdes_y");
-    _params_handles.cdes_z      = param_find("UUV_CIRC_cdes_z");
-    _params_handles.ome0        = param_find("UUV_CIRC_ome0");      // desired Angular speed
+    _params_handles.Order       = param_find("UUV_CIRC_ORDER");     // Ordering Number of Vehicle
+    _params_handles.Kcirc       = param_find("UUV_CIRC_KCIRC");     // proportional Gain for first order Steerer
+    _params_handles.Kdes        = param_find("UUV_CIRC_KDES");      // proportional Gain for desired circ middlepoint in first order steerer;
+    _params_handles.Yconst      = param_find("UUV_CIRC_YCONST");    // constant offset on Yaw_rate actuator input
+    _params_handles.Ksp         = param_find("UUV_CIRC_KSP");       // speed constant
+    _params_handles.Kpy         = param_find("UUV_CIRC_KPY");       // proportional Gain Yaw_rate
+    //_params_handles.Kpf         = param_find("UUV_CIRC_KPF");       // proportional Gain phi
+    //_params_handles.Kpro        = param_find("UUV_CIRC_KPRO");      // proportional Gain eta
+    _params_handles.Kiy         = param_find("UUV_CIRC_KIY");       // integrator Gain Yaw_rate
+    //_params_handles.Kif         = param_find("UUV_CIRC_KIF");       // integrator Gain phi
+    //_params_handles.Kiro        = param_find("UUV_CIRC_KIRO");      // integrator Gain eta
+    _params_handles.Kdy         = param_find("UUV_CIRC_KDY");       // differentiator Gain Yaw_rate
+    //_params_handles.Kdf         = param_find("UUV_CIRC_KDF");       // differentiator Gain phi
+    //_params_handles.Kdro        = param_find("UUV_CIRC_KDRO");      // differentiator Gain eta
+    _params_handles.cdes_x      = param_find("UUV_CIRC_CDES_X");    //desired Circ-Middlepoint
+    _params_handles.cdes_y      = param_find("UUV_CIRC_CDES_Y");
+    _params_handles.cdes_z      = param_find("UUV_CIRC_CDES_Z");
+    _params_handles.ome0        = param_find("UUV_CIRC_OME");      // desired Angular speed
 
 
     // fetch initial parameter values
@@ -242,23 +250,23 @@ int UUVCirc::parameters_update()
         _params.Ksp = v;
         param_get(_params_handles.Kpy, &v);
         _params.Kpy = v;
-        param_get(_params_handles.Kpf, &v);
+/*        param_get(_params_handles.Kpf, &v);
         _params.Kpf = v;
         param_get(_params_handles.Kpro, &v);
         _params.Kpro = v;
-        param_get(_params_handles.Kiy, &v);
+*/        param_get(_params_handles.Kiy, &v);
         _params.Kiy = v;
-        param_get(_params_handles.Kif, &v);
+/*        param_get(_params_handles.Kif, &v);
         _params.Kif = v;
         param_get(_params_handles.Kiro, &v);
         _params.Kiro = v;
-        param_get(_params_handles.Kdy, &v);
+*/        param_get(_params_handles.Kdy, &v);
         _params.Kdy = v;
-        param_get(_params_handles.Kdf, &v);
+/*        param_get(_params_handles.Kdf, &v);
         _params.Kdf = v;
         param_get(_params_handles.Kdro, &v);
         _params.Kdro = v;
-        param_get(_params_handles.cdes_x, &v);
+*/        param_get(_params_handles.cdes_x, &v);
         _params.cdes_x = v;
         param_get(_params_handles.cdes_y, &v);
         _params.cdes_y = v;
@@ -314,7 +322,7 @@ UUVCirc::actuators_publish()
 
         // lazily publish _actuators only once available
         if (_actuator_pub != nullptr) {
-                PX4_INFO("ACT:\t%8.4f\t%8.4f",
+                PX4_INFO("ACT:\t%8.4f\t%8.4f \n",
                         (double)_actuators.control[2],
                         (double)_actuators.control[3]);
                 return orb_publish(ORB_ID(actuator_controls_0), _actuator_pub, &_actuators);
@@ -348,28 +356,119 @@ UUVCirc::task_main()
         _vehicle_attitude_sub = orb_subscribe(ORB_ID(vehicle_attitude));
         /* subscribe to localization topic */
         _vehicle_local_position_sub = orb_subscribe(ORB_ID(vehicle_local_position));
-        /* subscribe to position_setpoint topic */
-        _position_setpoint_sub = orb_subscribe(ORB_ID(position_setpoint));
+        /* subscribe to first uuv position topic */
+        _uuv_one_pose_sub = orb_subscribe(ORB_ID(uuv_one_pose));
+        /* subscribe to second uuv position topic */
+        _uuv_two_pose_sub = orb_subscribe(ORB_ID(uuv_two_pose));
+        /* subscribe to third uuv position topic */
+        _uuv_three_pose_sub = orb_subscribe(ORB_ID(uuv_three_pose));
+        /* subscribe to fourth uuv position topic */
+        _uuv_four_pose_sub = orb_subscribe(ORB_ID(uuv_four_pose));
+        /* subscribe to fifth uuv position topic */
+        _uuv_five_pose_sub = orb_subscribe(ORB_ID(uuv_five_pose));
 
 
         // wakeup source(s)
-        px4_pollfd_struct_t fds[4];
+        int s=3+_params.NUM;
+        px4_pollfd_struct_t fds[s];
 
         // Setup of loop
-        fds[0].fd = _sensor_sub;
-        fds[0].events = POLLIN;
-        fds[1].fd = _vehicle_attitude_sub;
-        fds[1].events = POLLIN;
-        fds[2].fd = _vehicle_local_position_sub;
-        fds[2].events = POLLIN;
-        fds[3].fd = _position_setpoint_sub;
-        fds[3].events = POLLIN;
+        switch(_params.NUM){
+            case 0:
+                fds[0].fd = _sensor_sub;
+                fds[0].events = POLLIN;
+                fds[1].fd = _vehicle_attitude_sub;
+                fds[1].events = POLLIN;
+                fds[2].fd = _vehicle_local_position_sub;
+                fds[2].events = POLLIN;
+                break;
+            case 1:
+                fds[0].fd = _sensor_sub;
+                fds[0].events = POLLIN;
+                fds[1].fd = _vehicle_attitude_sub;
+                fds[1].events = POLLIN;
+                fds[2].fd = _vehicle_local_position_sub;
+                fds[2].events = POLLIN;
+                fds[3].fd = _uuv_one_pose_sub;
+                fds[3].events = POLLIN;
+                break;
+            case 2:
+                fds[0].fd = _sensor_sub;
+                fds[0].events = POLLIN;
+                fds[1].fd = _vehicle_attitude_sub;
+                fds[1].events = POLLIN;
+                fds[2].fd = _vehicle_local_position_sub;
+                fds[2].events = POLLIN;
+                fds[3].fd = _uuv_one_pose_sub;
+                fds[3].events = POLLIN;
+                fds[4].fd = _uuv_two_pose_sub;
+                fds[4].events = POLLIN;
+                break;
+            case 3:
+                fds[0].fd = _sensor_sub;
+                fds[0].events = POLLIN;
+                fds[1].fd = _vehicle_attitude_sub;
+                fds[1].events = POLLIN;
+                fds[2].fd = _vehicle_local_position_sub;
+                fds[2].events = POLLIN;
+                fds[3].fd = _uuv_one_pose_sub;
+                fds[3].events = POLLIN;
+                fds[4].fd = _uuv_two_pose_sub;
+                fds[4].events = POLLIN;
+                fds[5].fd = _uuv_three_pose_sub;
+                fds[5].events = POLLIN;
+                break;
+            case 4:
+                fds[0].fd = _sensor_sub;
+                fds[0].events = POLLIN;
+                fds[1].fd = _vehicle_attitude_sub;
+                fds[1].events = POLLIN;
+                fds[2].fd = _vehicle_local_position_sub;
+                fds[2].events = POLLIN;
+                fds[3].fd = _uuv_one_pose_sub;
+                fds[3].events = POLLIN;
+                fds[4].fd = _uuv_two_pose_sub;
+                fds[4].events = POLLIN;
+                fds[5].fd = _uuv_three_pose_sub;
+                fds[5].events = POLLIN;
+                fds[6].fd = _uuv_four_pose_sub;
+                fds[6].events = POLLIN;
+                break;
+            case 5:
+                fds[0].fd = _sensor_sub;
+                fds[0].events = POLLIN;
+                fds[1].fd = _vehicle_attitude_sub;
+                fds[1].events = POLLIN;
+                fds[2].fd = _vehicle_local_position_sub;
+                fds[2].events = POLLIN;
+                fds[3].fd = _uuv_one_pose_sub;
+                fds[3].events = POLLIN;
+                fds[4].fd = _uuv_two_pose_sub;
+                fds[4].events = POLLIN;
+                fds[5].fd = _uuv_three_pose_sub;
+                fds[5].events = POLLIN;
+                fds[6].fd = _uuv_four_pose_sub;
+                fds[6].events = POLLIN;
+                fds[7].fd = _uuv_five_pose_sub;
+                fds[7].events = POLLIN;
+                break;
+        }
 
         int error_counter = 0;
         double phi_target = 0;
         double phi_act;
         double theta_act=0;//, theta_bef=0;
-        double theta_bct=0;
+        double uuv1yaw=0;
+        double uuv2yaw=0;
+        double uuv3yaw=0;
+        double uuv4yaw=0;
+        double uuv5yaw=0;
+        double Kpf=2;
+        double Kpro = 5;
+        double Kdf = 4;
+        double Kdro = 4;
+        double Kif = 1;
+        double Kiro = 3;
         double psi=0;                 // yawspeed controller
         double nu;                  // steering controller
         double mu;                  // pitch contoller
@@ -398,13 +497,22 @@ UUVCirc::task_main()
         matrix::Vector3<double> r(0, 0, 0);       // local position vector
         matrix::Vector3<double> v1;               // local speed vectors
         //matrix::Vector3<double> v2;               // local speed vectors
-        matrix::Vector3<double> T(0, 0, 0);       // Position Vektor of other Boats
+        matrix::Vector3<double> T1(0, 0, 0);       // Position Vektor of other Boats
+        matrix::Vector3<double> T2(0, 0, 0);       // Position Vektor of other Boats
+        matrix::Vector3<double> T3(0, 0, 0);       // Position Vektor of other Boats
+        matrix::Vector3<double> T4(0, 0, 0);       // Position Vektor of other Boats
+        matrix::Vector3<double> T5(0, 0, 0);       // Position Vektor of other Boats
+
+        matrix::Vector3<double> zero(0, 0, 0);     // zero vector
 
 
-
-        matrix::Vector3<double> c1;                // own circ-middlepoint vector
+        matrix::Vector3<double> c0;                // own circ-middlepoint vector
+        matrix::Vector3<double> c1;                // friend circ-middlepoint vector
         matrix::Vector3<double> c2;                // friend circ-middlepoint vector
-        matrix::Vector3<double> c3;                // desired circ-middlepoint vector
+        matrix::Vector3<double> c3;                // friend circ-middlepoint vector
+        matrix::Vector3<double> c4;                // friend circ-middlepoint vector
+        matrix::Vector3<double> c5;                // friend circ-middlepoint vector
+        matrix::Vector3<double> cdes;                // desired circ-middlepoint vector
 
 
         while(!_task_should_exit) {
@@ -487,27 +595,59 @@ UUVCirc::task_main()
                                 r(0)=raw_position.y;
                                 r(1)=raw_position.x;
                                 r(2)=-raw_position.z;
-
-
-
                                 // printing the sensor data into the terminal
                                 /*PX4_INFO("POS:\t%8.4f\t%8.4f\t%8.4f",
                                          (double)r(0),
                                          (double)r(1),
                                          (double)r(2)); */
                                 // local position Vector r in global coordinates
-                                struct position_setpoint_s possp;
-                                orb_copy(ORB_ID(position_setpoint), _position_setpoint_sub, &possp);
-                                T(0)=possp.y+1;
-                                T(1)=possp.x;
-                                T(2)=-possp.z;
-                                theta_bct=atan2(cos(possp.yaw),sin(possp.yaw));
-                                //theta_bct = possp.yaw;
+
+                                struct uuv_one_pose_s uuv1pos;
+                                orb_copy(ORB_ID(uuv_one_pose), _uuv_one_pose_sub, &uuv1pos);
+                                T1(0)=uuv1pos.y+1;
+                                T1(1)=uuv1pos.x;
+                                T1(2)=-uuv1pos.z;
+                                matrix::Quatf uuv1q_att(uuv1pos.q);     // control_state is frequently updated
+                                matrix::Dcmf R1 = uuv1q_att; // create rotation matrix for the quaternion when post multiplying with a column vector
+                                uuv1yaw=atan2(R1(0,0),R1(1,0));
+                                struct uuv_two_pose_s uuv2pos;
+                                orb_copy(ORB_ID(uuv_two_pose), _uuv_two_pose_sub, &uuv2pos);
+                                T2(0)=uuv2pos.y+1;
+                                T2(1)=uuv2pos.x;
+                                T2(2)=-uuv2pos.z;
+                                matrix::Quatf uuv2q_att(uuv2pos.q);     // control_state is frequently updated
+                                matrix::Dcmf R2 = uuv2q_att; // create rotation matrix for the quaternion when post multiplying with a column vector
+                                uuv2yaw=atan2(R2(0,0),R2(1,0));
+                                struct uuv_three_pose_s uuv3pos;
+                                orb_copy(ORB_ID(uuv_three_pose), _uuv_three_pose_sub, &uuv3pos);
+                                T3(0)=uuv3pos.y+1;
+                                T3(1)=uuv3pos.x;
+                                T3(2)=-uuv3pos.z;
+                                matrix::Quatf uuv3q_att(uuv1pos.q);     // control_state is frequently updated
+                                matrix::Dcmf R3 = uuv3q_att; // create rotation matrix for the quaternion when post multiplying with a column vector
+                                uuv3yaw=atan2(R3(0,0),R3(1,0));
+                                struct uuv_four_pose_s uuv4pos;
+                                orb_copy(ORB_ID(uuv_four_pose), _uuv_four_pose_sub, &uuv4pos);
+                                T4(0)=uuv4pos.y+1;
+                                T4(1)=uuv4pos.x;
+                                T4(2)=-uuv4pos.z;
+                                matrix::Quatf uuv4q_att(uuv1pos.q);     // control_state is frequently updated
+                                matrix::Dcmf R4 = uuv4q_att; // create rotation matrix for the quaternion when post multiplying with a column vector
+                                uuv4yaw=atan2(R4(0,0),R4(1,0));
+                                struct uuv_five_pose_s uuv5pos;
+                                orb_copy(ORB_ID(uuv_five_pose), _uuv_five_pose_sub, &uuv5pos);
+                                T5(0)=uuv5pos.y+1;
+                                T5(1)=uuv5pos.x;
+                                T5(2)=-uuv5pos.z;
+                                matrix::Quatf uuv5q_att(uuv1pos.q);     // control_state is frequently updated
+                                matrix::Dcmf R5 = uuv5q_att; // create rotation matrix for the quaternion when post multiplying with a column vector
+                                uuv5yaw=atan2(R5(0,0),R5(1,0));
+                                //uuv1yaw = possp.yaw;
                                 /*PX4_INFO("LPos:\t%8.4f\t%8.4f\t%8.4f\t%8.4f",
                                          (double)T(0),
                                          (double)T(1),
                                          (double)T(2),
-                                         (double)theta_bct);    */
+                                         (double)uuv1yaw);    */
                                 // local position Vector T in global coordinates
 
 
@@ -523,29 +663,114 @@ UUVCirc::task_main()
                 v1(0)=cos(theta_act);
                 v1(1)=sin(theta_act);
                 v1(2)=0;
-                //v2(0)=cos(theta_bct);
-                //v2(1)=sin(theta_bct);
+                //v2(0)=cos(uuv1yaw);
+                //v2(1)=sin(uuv1yaw);
                 //v2(2)=0;
 
                 //circ middlepoints
-                c1(0)=r(0)+sin(theta_act)/_params.ome0;
-                c1(1)=r(1)-cos(theta_act)/_params.ome0;
+                c0(0)=r(0)+sin(theta_act)/_params.ome0;
+                c0(1)=r(1)-cos(theta_act)/_params.ome0;
+                c0(2)=0;
+                c1(0)=T1(0)+sin(uuv1yaw)/_params.ome0;
+                c1(1)=T1(1)-cos(uuv1yaw)/_params.ome0;
                 c1(2)=0;
-                c2(0)=T(0)+sin(theta_bct)/_params.ome0;
-                c2(1)=T(1)-cos(theta_bct)/_params.ome0;
+                c2(0)=T2(0)+sin(uuv2yaw)/_params.ome0;
+                c2(1)=T2(1)-cos(uuv2yaw)/_params.ome0;
                 c2(2)=0;
-                c3(0)=_params.cdes_x;
-                c3(1)=_params.cdes_y;
-                c3(2)=_params.cdes_z;
+                c3(0)=T3(0)+sin(uuv3yaw)/_params.ome0;
+                c3(1)=T3(1)-cos(uuv3yaw)/_params.ome0;
+                c3(2)=0;
+                c4(0)=T4(0)+sin(uuv4yaw)/_params.ome0;
+                c4(1)=T4(1)-cos(uuv4yaw)/_params.ome0;
+                c4(2)=0;
+                c5(0)=T5(0)+sin(uuv5yaw)/_params.ome0;
+                c5(1)=T5(1)-cos(uuv5yaw)/_params.ome0;
+                c5(2)=0;
+                cdes(0)=_params.cdes_x;
+                cdes(1)=_params.cdes_y;
+                cdes(2)=_params.cdes_z;
+
+                switch (_params.NUM){
+                    case 1:
+                        c2=zero;
+                        c3=zero;
+                        c4=zero;
+                        c5=zero;
+                        break;
+                    case 2:
+                        switch(_params.Order){
+                            case 1:
+                                c1=zero;
+                                break;
+                            case 2:
+                                c2=zero;
+                                break;
+                        }
+                        c3=zero;
+                        c4=zero;
+                        c5=zero;
+                        break;
+                    case 3:
+                        switch(_params.Order){
+                            case 1:
+                                c1=zero;
+                                break;
+                            case 2:
+                                c2=zero;
+                                break;
+                            case 3:
+                                c3=zero;
+                                break;
+                        }
+                        c4=zero;
+                        c5=zero;
+                        break;
+                    case 4:
+                        switch(_params.Order){
+                            case 1:
+                                c1=zero;
+                                break;
+                            case 2:
+                                c2=zero;
+                                break;
+                            case 3:
+                                c3=zero;
+                                break;
+                            case 4:
+                                c4=zero;
+                                break;
+                        }
+                        c5=zero;
+                        break;
+                    case 5:
+                        switch(_params.Order){
+                            case 1:
+                                c1=zero;
+                                break;
+                            case 2:
+                                c2=zero;
+                                break;
+                            case 3:
+                                c3=zero;
+                                break;
+                            case 4:
+                                c4=zero;
+                                break;
+                            case 5:
+                                c5=zero;
+                                break;
+                        }
+                        break;
+                }
 
 
 
-/*
+
                 PX4_INFO("c1:\t%8.4f\t%8.4f\t%8.4f",
                          (double)c1(0),
                          (double)c1(1),
                          (double)c1(2));
-                PX4_INFO("c2:\t%8.4f\t%8.4f\t%8.4f",
+ /*               PX4_INFO("c2:\t%8.4f\t%8.4f\t%8.4f",
                          (double)c2(0),
                          (double)c2(1),
                          (double)c2(2));
@@ -556,18 +781,18 @@ UUVCirc::task_main()
 */
 
                 // steering controller
-                nu = _params.ome0*(1+(1/(_params.NUM+_params.Kdes))*_params.Kcirc*((c1(0)-c2(0)-_params.Kdes*c3(0))*v1(0)+(c1(1)-c2(1)-_params.Kdes*c3(1))*v1(1)+(c1(2)-c2(2)-_params.Kdes*c3(2))*v1(2)));
+                nu = _params.ome0*(1+(1/(_params.NUM+_params.Kdes))*_params.Kcirc*((c0(0)-c1(0)-c2(0)-c3(0)-c4(0)-c5(0)-_params.Kdes*cdes(0))*v1(0)+(c0(1)-c1(1)-c2(1)-c3(1)-c4(1)-c5(1)-_params.Kdes*cdes(1))*v1(1)+(c0(2)-c1(2)-c2(2)-c3(2)-c4(2)-c5(2)-_params.Kdes*cdes(2))*v1(2)));
                 //u =Kp*(nu-yawspeed);
-/*
-                PX4_INFO("yawspd:\t%8.4f",
-                         (double)yawspd);
-*/
+
+                PX4_INFO("nu:\t%8.4f",
+                         (double)nu);
+
                 //error definitions
                 dyspd1 = nu-yawspd;
-/*
+
                 PX4_INFO("dyspd:\t%8.4f",
                          (double)dyspd1);
-*/
+
                 f1 = sin(phi_target-phi_act);                                       // Pitch
                 ro1 = sin(3.1415-atan2(y_B(2),sqrt(pow(y_B(0),2)+pow(y_B(1),2))));  // Roll
 
@@ -583,8 +808,8 @@ UUVCirc::task_main()
                 Iro+= ro1*(dt1-dt0);
 
                 psi = _params.Kpy*dyspd1+_params.Kiy*Ie+_params.Kdy*de;
-                mu = _params.Kpf*f1+_params.Kif*If+_params.Kdf*df;
-                eta = _params.Kpro*ro1+_params.Kiro*Iro+_params.Kdro*dro;
+                mu = Kpf*f1+Kif*If+Kdf*df;
+                eta = Kpro*ro1+Kiro*Iro+Kdro*dro;
 
                 // Controller arguments transformed in Boat-Coordinates
                 ro= eta;//(eta-nu*x_B(2));

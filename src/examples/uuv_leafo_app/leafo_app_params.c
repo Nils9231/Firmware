@@ -33,7 +33,7 @@
 #include <parameters/param.h>
 
 /**
- * @file circ_app_params.c
+ * @file leafo_app_params.c
  * Parameters for path controller for the Hippocampus.
  *
  * @author Nils Timmermann <nils.timmermann@tuhh.de>
@@ -47,67 +47,44 @@
  * @min 1.0
  * @max 5.0
  * @increment 1.0
- * @group UUV_CIRC
+ * @group UUV_LEAFO
  */
-PARAM_DEFINE_FLOAT(UUV_CIRC_NUM, 2.0f);
+PARAM_DEFINE_FLOAT(UUV_LEAFO_NUM, 2.0f);
 
 /**
  * Vehicle Order in Row
  * 
- * to adjust angle failure vor same distance on circle
+ * to adjust angle failure vor same distance on LEAFOle
  *
  * @min 1.0
  * @max 5.0
  * @increment 1.0
- * @group UUV_CIRC
+ * @group UUV_LEAFO
  */
-PARAM_DEFINE_FLOAT(UUV_CIRC_ORDER, 2.0f);
+PARAM_DEFINE_FLOAT(UUV_LEAFO_ORDER, 2.0f);
  
 /**
- * Proportional Gain of Midllepoint error
+ * Follow in Chain or all one leader
  * 
- * influence of midllepoint error on target yaw_rate
+ * Follow in Chain or all one leader
  *
  * @min 0.0
  * @increment 0.01
  * @reboot_required true 0
- * @group UUV_CIRC
+ * @group UUV_LEAFO
  */
-PARAM_DEFINE_FLOAT(UUV_CIRC_KCIRC, 1.0f);
-
-
-/**
- * Proportional Gain of Desired middlepoint
- * 
- * Influence on Middlepoint error of desired Middlepoint
- *
- * @min 0.0
- * @increment 0.01
- * @group UUV_CIRC
- */
-PARAM_DEFINE_FLOAT(UUV_CIRC_KDES, 0.0f);
-
-/**
- * constant yaw_rate control input
- * 
- * To set a better circular motion
- *
- * @min 0.0
- * @increment 0.01
- * @group UUV_CIRC
- */
-PARAM_DEFINE_FLOAT(UUV_CIRC_YCONST, 0.0f);
+PARAM_DEFINE_FLOAT(UUV_LEAFO_IC, 1.0f);
 
 /**
  * Proportional Speed Gain
  * 
- * To manage same distance on circle
+ * To manage same distance on LEAFOle
  *
  * @min 0.0
  * @increment 0.01
- * @group UUV_CIRC
+ * @group UUV_LEAFO
  */
-PARAM_DEFINE_FLOAT(UUV_CIRC_KSP, 0.5f);
+PARAM_DEFINE_FLOAT(UUV_LEAFO_KSP, 0.5f);
 
 /**
  * Proportional Gain Yaw_rate PID
@@ -116,31 +93,9 @@ PARAM_DEFINE_FLOAT(UUV_CIRC_KSP, 0.5f);
  *
  * @min 0.0
  * @increment 0.01
- * @group UUV_CIRC
+ * @group UUV_LEAFO
  */
-PARAM_DEFINE_FLOAT(UUV_CIRC_KPY, 1.0f);
-
-/**
- * Proportional Gain Pitch_rate PID
- * 
- * Pitch_rate
- *
- * @min 0.0
- * @increment 0.01
- * @group UUV_CIRC
- */
-//PARAM_DEFINE_FLOAT(UUV_CIRC_KPF, 2.0f);
-
-/**
- * Proportional Gain Roll_rate PID
- * 
- * Roll_rate
- *
- * @min 0.0
- * @increment 0.01
- * @group UUV_CIRC
- */
-//PARAM_DEFINE_FLOAT(UUV_CIRC_KPRO, 5.0f);
+PARAM_DEFINE_FLOAT(UUV_LEAFO_KYP, 1.0f);
 
 /**
  * Integrator Gain Yaw_rate PID
@@ -149,31 +104,9 @@ PARAM_DEFINE_FLOAT(UUV_CIRC_KPY, 1.0f);
  *
  * @min 0.0
  * @increment 0.01
- * @group UUV_CIRC
+ * @group UUV_LEAFO
  */
-PARAM_DEFINE_FLOAT(UUV_CIRC_KIY, 0.0f);
-
-/**
- * Integrator Gain Pitch_rate PID
- * 
- * Pitch_rate
- *
- * @min 0.0
- * @increment 0.01
- * @group UUV_CIRC
- */
-//PARAM_DEFINE_FLOAT(UUV_CIRC_KIF, 2.0f);
-
-/**
- * Integrator Gain Roll_rate PID
- * 
- * Roll_rate
- *
- * @min 0.0
- * @increment 0.01
- * @group UUV_CIRC
- */
-//PARAM_DEFINE_FLOAT(UUV_CIRC_KIRO, 3.0f); 
+PARAM_DEFINE_FLOAT(UUV_LEAFO_KYI, 0.0f);
 
 /**
  * Differentiator Gain Yaw_rate PID
@@ -182,75 +115,74 @@ PARAM_DEFINE_FLOAT(UUV_CIRC_KIY, 0.0f);
  *
  * @min 0.0
  * @increment 0.01
- * @group UUV_CIRC
+ * @group UUV_LEAFO
  */
-PARAM_DEFINE_FLOAT(UUV_CIRC_KDY, 0.0f); 
+PARAM_DEFINE_FLOAT(UUV_LEAFO_KYD, 0.0f); 
 
 /**
- * Differentiator Gain Pitch_rate PID
+ * X-Value of desired Trajectory
  * 
- * Pitch_rate
+ * T
  *
  * @min 0.0
  * @increment 0.01
- * @group UUV_CIRC
+ * @group UUV_LEAFO
  */
-//PARAM_DEFINE_FLOAT(UUV_CIRC_KDF, 4.0f); 
+PARAM_DEFINE_FLOAT(UUV_LEAFO_T_X, 1.0f); 
 
 /**
- * Differentiator Gain Roll_rate PID
+ * Y-Value of desired Trajectory
  * 
- * Roll_rate
+ * T
  *
  * @min 0.0
  * @increment 0.01
- * @group UUV_CIRC
+ * @group UUV_LEAFO
  */
-//PARAM_DEFINE_FLOAT(UUV_CIRC_KDRO, 4.0f); 
+PARAM_DEFINE_FLOAT(UUV_LEAFO_T_Y, 0.0f); 
 
 /**
- * X-Value of desirec Cicle Middlepoint
+ * Z-Value of desired Trajectory
  * 
- * cdes
+ * T
  *
  * @min 0.0
  * @increment 0.01
- * @group UUV_CIRC
+ * @group UUV_LEAFO
  */
-PARAM_DEFINE_FLOAT(UUV_CIRC_CDES_X, 0.0f); 
+PARAM_DEFINE_FLOAT(UUV_LEAFO_T_Z, 0.0f); 
 
 /**
- * Y-Value of desirec Cicle Middlepoint
+ * X-Value of desired Trajectory-Offset
  * 
- * cdes
+ * Toff
  *
  * @min 0.0
  * @increment 0.01
- * @group UUV_CIRC
+ * @group UUV_LEAFO
  */
-PARAM_DEFINE_FLOAT(UUV_CIRC_CDES_Y, 0.0f); 
+PARAM_DEFINE_FLOAT(UUV_LEAFO_TOFF_X, 0.0f); 
 
 /**
- * Z-Value of desirec Cicle Middlepoint
+ * Y-Value of desired Trajectory-Offset
  * 
- * cdes
+ * Toff
  *
  * @min 0.0
  * @increment 0.01
- * @group UUV_CIRC
+ * @group UUV_LEAFO
  */
-PARAM_DEFINE_FLOAT(UUV_CIRC_CDES_Z, 0.0f); 
- 
+PARAM_DEFINE_FLOAT(UUV_LEAFO_TOFF_Y, 0.0f); 
+
 /**
- * Desired angular Velocity
+ * Z-Value of desired Trajectory-Offset
  * 
- * ome0
+ * Toff
  *
  * @min 0.0
  * @increment 0.01
- * @group UUV_CIRC
+ * @group UUV_LEAFO
  */
-PARAM_DEFINE_FLOAT(UUV_CIRC_OME, 0.25f); 
-
+PARAM_DEFINE_FLOAT(UUV_LEAFO_TOFF_Z, 0.0f); 
 
 

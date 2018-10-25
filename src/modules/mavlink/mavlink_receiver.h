@@ -81,6 +81,12 @@
 #include <uORB/topics/vehicle_odometry.h>
 #include <uORB/topics/vehicle_rates_setpoint.h>
 #include <uORB/topics/vehicle_status.h>
+#include <uORB/topics/uuv_one_pose.h>
+#include <uORB/topics/uuv_two_pose.h>
+#include <uORB/topics/uuv_three_pose.h>
+#include <uORB/topics/uuv_four_pose.h>
+#include <uORB/topics/uuv_five_pose.h>
+
 
 #include "mavlink_ftp.h"
 #include "mavlink_log_handler.h"
@@ -162,6 +168,11 @@ private:
 	void handle_message_debug(mavlink_message_t *msg);
 	void handle_message_debug_vect(mavlink_message_t *msg);
 	void handle_message_set_position_target_global_int(mavlink_message_t *msg);
+	void handle_message_uuv_one_pos(mavlink_message_t *msg);
+	void handle_message_uuv_two_pos(mavlink_message_t *msg);
+	void handle_message_uuv_three_pos(mavlink_message_t *msg);
+	void handle_message_uuv_four_pos(mavlink_message_t *msg);
+	void handle_message_uuv_five_pos(mavlink_message_t *msg);
 
 	void *receive_thread(void *arg);
 
@@ -243,6 +254,12 @@ private:
 	orb_advert_t _debug_key_value_pub;
 	orb_advert_t _debug_value_pub;
 	orb_advert_t _debug_vect_pub;
+	orb_advert_t _uuv_one_pos_pub;
+	orb_advert_t _uuv_two_pos_pub;
+	orb_advert_t _uuv_three_pos_pub;
+	orb_advert_t _uuv_four_pos_pub;
+	orb_advert_t _uuv_five_pos_pub;
+
 	static const int _gps_inject_data_queue_size = 6;
 	orb_advert_t _gps_inject_data_pub;
 	orb_advert_t _command_ack_pub;

@@ -100,6 +100,7 @@
 #include <uORB/topics/vehicle_command_ack.h>
 #include <uORB/topics/position_setpoint.h>
 
+
 #include "mavlink_bridge_header.h"
 #include "mavlink_receiver.h"
 #include "mavlink_main.h"
@@ -160,6 +161,11 @@ MavlinkReceiver::MavlinkReceiver(Mavlink *parent) :
 	_debug_key_value_pub(nullptr),
 	_debug_value_pub(nullptr),
 	_debug_vect_pub(nullptr),
+        _uuv_one_pos_pub(nullptr),
+        _uuv_two_pos_pub(nullptr),
+        _uuv_three_pos_pub(nullptr),
+        _uuv_four_pos_pub(nullptr),
+        _uuv_five_pos_pub(nullptr),
         _gps_inject_data_pub(nullptr),
 	_command_ack_pub(nullptr),
 	_control_mode_sub(orb_subscribe(ORB_ID(vehicle_control_mode))),
@@ -174,18 +180,19 @@ MavlinkReceiver::MavlinkReceiver(Mavlink *parent) :
 	_offboard_control_mode{},
 	_orb_class_instance(-1),
 	_mom_switch_pos{},
-	_mom_switch_state(0),
-	_p_bat_emergen_thr(param_find("BAT_EMERGEN_THR")),
+        _mom_switch_state(0),
+        _p_bat_emergen_thr(param_find("BAT_EMERGEN_THR")),
 	_p_bat_crit_thr(param_find("BAT_CRIT_THR")),
 	_p_bat_low_thr(param_find("BAT_LOW_THR")),
 	_p_flow_rot(param_find("SENS_FLOW_ROT")),
 	_p_flow_maxr(param_find("SENS_FLOW_MAXR")),
-	_p_flow_minhgt(param_find("SENS_FLOW_MINHGT")),
-	_p_flow_maxhgt(param_find("SENS_FLOW_MAXHGT"))
+        _p_flow_minhgt(param_find("SENS_FLOW_MINHGT")),
+        _p_flow_maxhgt(param_find("SENS_FLOW_MAXHGT"))
 {
 	/* Make the attitude quaternion valid */
-	_att.q[0] = 1.0f;
+        _att.q[0] = 1.0f;
 }
+
 
 MavlinkReceiver::~MavlinkReceiver()
 {
@@ -347,6 +354,27 @@ MavlinkReceiver::handle_message(mavlink_message_t *msg)
 	case MAVLINK_MSG_ID_DEBUG_VECT:
 		handle_message_debug_vect(msg);
                 break;
+
+        case MAVLINK_MSG_ID_UUV_ONE_POS:
+                handle_message_uuv_one_pos(msg);
+                break;
+
+        case MAVLINK_MSG_ID_UUV_TWO_POS:
+                handle_message_uuv_two_pos(msg);
+                break;
+
+        case MAVLINK_MSG_ID_UUV_THREE_POS:
+                handle_message_uuv_three_pos(msg);
+                break;
+
+        case MAVLINK_MSG_ID_UUV_FOUR_POS:
+                handle_message_uuv_four_pos(msg);
+                break;
+
+        case MAVLINK_MSG_ID_UUV_FIVE_POS:
+                handle_message_uuv_five_pos(msg);
+                break;
+
 
 	default:
 		break;
@@ -550,7 +578,7 @@ void MavlinkReceiver::handle_message_command_both(mavlink_message_t *msg, const 
 {
 	bool target_ok = evaluate_target_ok(cmd_mavlink.command, cmd_mavlink.target_system, cmd_mavlink.target_component);
 
-	bool send_ack = true;
+        bool send_ack = true;
 	uint8_t result = vehicle_command_ack_s::VEHICLE_RESULT_ACCEPTED;
 
 	if (!target_ok) {
@@ -778,7 +806,7 @@ MavlinkReceiver::handle_message_hil_optical_flow(mavlink_message_t *msg)
 
 	} else {
 		orb_publish(ORB_ID(distance_sensor), _hil_distance_sensor_pub, &d);
-	}
+        }
 }
 
 void
@@ -881,220 +909,185 @@ MavlinkReceiver::handle_message_att_pos_mocap(mavlink_message_t *msg)
 
 	orb_publish_auto(ORB_ID(vehicle_mocap_odometry), &_mocap_odometry_pub, &mocap_odom, &instance_id, ORB_PRIO_HIGH);
 }
-/*
-void
-MavlinkReceiver::handle_message_set_position_target_global_int(mavlink_message_t *msg)
-{*/
-    /*Zweckentfrendung dieses Topics und der Message für die Kommunikation zwischen den Booten in der Simulation. Position von uuv2 wird als position übermittelt.
-     * Orientierung wird in Geschwindigkeit und alt als Quaternionen übertragen. WENN EIGENE MAVROS MESSAGE VORHANDEN DIESE FKT LÖSCHEN UND DIE HIERUNTER ZURÜCKÄNDERN*/
-  /*      mavlink_set_position_target_global_int_t set_position_target_global_int;
-        mavlink_msg_set_position_target_global_int_decode(msg, &set_position_target_global_int);
 
-        struct position_setpoint_triplet_s position_setpoint_triplet;
-        memset(&position_setpoint_triplet, 0, sizeof(position_setpoint_triplet));
-        orb_advert_t position_setpoint_triplet_pub = orb_advertise(ORB_ID(position_setpoint_triplet), &position_setpoint_triplet);
-
-        position_setpoint_triplet.current.x = set_position_target_global_int.lat_int;
-        position_setpoint_triplet.current.y = set_position_target_global_int.lon_int;
-        position_setpoint_triplet.current.z = set_position_target_global_int.alt;
-        position_setpoint_triplet.current.yaw = set_position_target_global_int.yaw;
-
-        orb_publish(ORB_ID(position_setpoint_triplet), position_setpoint_triplet_pub, &position_setpoint_triplet
-                    );
-}
-*/
 void
 MavlinkReceiver::handle_message_set_position_target_local_ned(mavlink_message_t *msg)
 {
-    /*Zweckentfrendung dieses Topics für die Kommunikation zwischen den Booten in der Simulation. Position von uuv2 wird als position übermittelt.
-     * Orientierung wird in Geschwindigkeit und alt als Quaternionen übertragen.*/
-	mavlink_set_position_target_local_ned_t set_position_target_local_ned;
-	mavlink_msg_set_position_target_local_ned_decode(msg, &set_position_target_local_ned);
+        mavlink_set_position_target_local_ned_t set_position_target_local_ned;
+        mavlink_msg_set_position_target_local_ned_decode(msg, &set_position_target_local_ned);
 
-        struct position_setpoint_s position_setpoint;
-        memset(&position_setpoint, 0, sizeof(position_setpoint));
-        orb_advert_t position_setpoint_pub = orb_advertise(ORB_ID(position_setpoint), &position_setpoint);
+        struct offboard_control_mode_s offboard_control_mode = {};
 
-        position_setpoint.x = set_position_target_local_ned.x;
-        position_setpoint.y = set_position_target_local_ned.y;
-        position_setpoint.z = set_position_target_local_ned.z;
-        position_setpoint.yaw = set_position_target_local_ned.yaw;
+        bool values_finite =
+                PX4_ISFINITE(set_position_target_local_ned.x) &&
+                PX4_ISFINITE(set_position_target_local_ned.y) &&
+                PX4_ISFINITE(set_position_target_local_ned.z) &&
+                PX4_ISFINITE(set_position_target_local_ned.vx) &&
+                PX4_ISFINITE(set_position_target_local_ned.vy) &&
+                PX4_ISFINITE(set_position_target_local_ned.vz) &&
+                PX4_ISFINITE(set_position_target_local_ned.afx) &&
+                PX4_ISFINITE(set_position_target_local_ned.afy) &&
+                PX4_ISFINITE(set_position_target_local_ned.afz) &&
+                PX4_ISFINITE(set_position_target_local_ned.yaw);
 
-        orb_publish(ORB_ID(position_setpoint), position_setpoint_pub, &position_setpoint);
+        /* Only accept messages which are intended for this system */
+        if ((mavlink_system.sysid == set_position_target_local_ned.target_system ||
+             set_position_target_local_ned.target_system == 0) &&
+            (mavlink_system.compid == set_position_target_local_ned.target_component ||
+             set_position_target_local_ned.target_component == 0) &&
+            values_finite) {
 
-/*
-	struct offboard_control_mode_s offboard_control_mode = {};
-
-
-	bool values_finite =
-		PX4_ISFINITE(set_position_target_local_ned.x) &&
-		PX4_ISFINITE(set_position_target_local_ned.y) &&
-		PX4_ISFINITE(set_position_target_local_ned.z) &&
-		PX4_ISFINITE(set_position_target_local_ned.vx) &&
-		PX4_ISFINITE(set_position_target_local_ned.vy) &&
-		PX4_ISFINITE(set_position_target_local_ned.vz) &&
-		PX4_ISFINITE(set_position_target_local_ned.afx) &&
-		PX4_ISFINITE(set_position_target_local_ned.afy) &&
-		PX4_ISFINITE(set_position_target_local_ned.afz) &&
-		PX4_ISFINITE(set_position_target_local_ned.yaw);
-*/
-	/* Only accept messages which are intended for this system */
-/*	if ((mavlink_system.sysid == set_position_target_local_ned.target_system ||
-	     set_position_target_local_ned.target_system == 0) &&
-	    (mavlink_system.compid == set_position_target_local_ned.target_component ||
-	     set_position_target_local_ned.target_component == 0) &&
-	    values_finite) {
-*/
-		/* convert mavlink type (local, NED) to uORB offboard control struct */
-/*		offboard_control_mode.ignore_position = (bool)(set_position_target_local_ned.type_mask & 0x7);
-		offboard_control_mode.ignore_alt_hold = (bool)(set_position_target_local_ned.type_mask & 0x4);
-		offboard_control_mode.ignore_velocity = (bool)(set_position_target_local_ned.type_mask & 0x38);
-		offboard_control_mode.ignore_acceleration_force = (bool)(set_position_target_local_ned.type_mask & 0x1C0);
-		bool is_force_sp = (bool)(set_position_target_local_ned.type_mask & (1 << 9));
-*/		/* yaw ignore flag mapps to ignore_attitude */
-/*		offboard_control_mode.ignore_attitude = (bool)(set_position_target_local_ned.type_mask & 0x400);
-*/		/* yawrate ignore flag mapps to ignore_bodyrate */
-/*		offboard_control_mode.ignore_bodyrate = (bool)(set_position_target_local_ned.type_mask & 0x800);
+                /* convert mavlink type (local, NED) to uORB offboard control struct */
+                offboard_control_mode.ignore_position = (bool)(set_position_target_local_ned.type_mask & 0x7);
+                offboard_control_mode.ignore_alt_hold = (bool)(set_position_target_local_ned.type_mask & 0x4);
+                offboard_control_mode.ignore_velocity = (bool)(set_position_target_local_ned.type_mask & 0x38);
+                offboard_control_mode.ignore_acceleration_force = (bool)(set_position_target_local_ned.type_mask & 0x1C0);
+                bool is_force_sp = (bool)(set_position_target_local_ned.type_mask & (1 << 9));
+                /* yaw ignore flag mapps to ignore_attitude */
+                offboard_control_mode.ignore_attitude = (bool)(set_position_target_local_ned.type_mask & 0x400);
+                /* yawrate ignore flag mapps to ignore_bodyrate */
+                offboard_control_mode.ignore_bodyrate = (bool)(set_position_target_local_ned.type_mask & 0x800);
 
 
-		bool is_takeoff_sp = (bool)(set_position_target_local_ned.type_mask & 0x1000);
-		bool is_land_sp = (bool)(set_position_target_local_ned.type_mask & 0x2000);
-		bool is_loiter_sp = (bool)(set_position_target_local_ned.type_mask & 0x3000);
-		bool is_idle_sp = (bool)(set_position_target_local_ned.type_mask & 0x4000);
+                bool is_takeoff_sp = (bool)(set_position_target_local_ned.type_mask & 0x1000);
+                bool is_land_sp = (bool)(set_position_target_local_ned.type_mask & 0x2000);
+                bool is_loiter_sp = (bool)(set_position_target_local_ned.type_mask & 0x3000);
+                bool is_idle_sp = (bool)(set_position_target_local_ned.type_mask & 0x4000);
 
-		offboard_control_mode.timestamp = hrt_absolute_time();
+                offboard_control_mode.timestamp = hrt_absolute_time();
 
-		if (_offboard_control_mode_pub == nullptr) {
-			_offboard_control_mode_pub = orb_advertise(ORB_ID(offboard_control_mode), &offboard_control_mode);
+                if (_offboard_control_mode_pub == nullptr) {
+                        _offboard_control_mode_pub = orb_advertise(ORB_ID(offboard_control_mode), &offboard_control_mode);
 
-		} else {
-			orb_publish(ORB_ID(offboard_control_mode), _offboard_control_mode_pub, &offboard_control_mode);
-		}
+                } else {
+                        orb_publish(ORB_ID(offboard_control_mode), _offboard_control_mode_pub, &offboard_control_mode);
+                }
 
-*/		/* If we are in offboard control mode and offboard control loop through is enabled
-		 * also publish the setpoint topic which is read by the controller */
-/*		if (_mavlink->get_forward_externalsp()) {
-			bool updated;
-			orb_check(_control_mode_sub, &updated);
+                /* If we are in offboard control mode and offboard control loop through is enabled
+                 * also publish the setpoint topic which is read by the controller */
+                if (_mavlink->get_forward_externalsp()) {
+                        bool updated;
+                        orb_check(_control_mode_sub, &updated);
 
-			if (updated) {
-				orb_copy(ORB_ID(vehicle_control_mode), _control_mode_sub, &_control_mode);
-			}
+                        if (updated) {
+                                orb_copy(ORB_ID(vehicle_control_mode), _control_mode_sub, &_control_mode);
+                        }
 
-			if (_control_mode.flag_control_offboard_enabled) {
-				if (is_force_sp && offboard_control_mode.ignore_position &&
-				    offboard_control_mode.ignore_velocity) {
+                        if (_control_mode.flag_control_offboard_enabled) {
+                                if (is_force_sp && offboard_control_mode.ignore_position &&
+                                    offboard_control_mode.ignore_velocity) {
 
-					PX4_WARN("force setpoint not supported");
+                                        PX4_WARN("force setpoint not supported");
 
-				} else {
-*/					/* It's not a pure force setpoint: publish to setpoint triplet  topic */
-/*					struct position_setpoint_triplet_s pos_sp_triplet = {};
-					pos_sp_triplet.timestamp = hrt_absolute_time();
-					pos_sp_triplet.previous.valid = false;
-					pos_sp_triplet.next.valid = false;
-					pos_sp_triplet.current.valid = true;
+                                } else {
+                                        /* It's not a pure force setpoint: publish to setpoint triplet  topic */
+                                        struct position_setpoint_triplet_s pos_sp_triplet = {};
+                                        pos_sp_triplet.timestamp = hrt_absolute_time();
+                                        pos_sp_triplet.previous.valid = false;
+                                        pos_sp_triplet.next.valid = false;
+                                        pos_sp_triplet.current.valid = true;
 
-*/					/* Order of statements matters. Takeoff can override loiter.
-					 * See https://github.com/mavlink/mavlink/pull/670 for a broader conversation. */
-/*					if (is_loiter_sp) {
-						pos_sp_triplet.current.type = position_setpoint_s::SETPOINT_TYPE_LOITER;
+                                        /* Order of statements matters. Takeoff can override loiter.
+                                         * See https://github.com/mavlink/mavlink/pull/670 for a broader conversation. */
+                                        if (is_loiter_sp) {
+                                                pos_sp_triplet.current.type = position_setpoint_s::SETPOINT_TYPE_LOITER;
 
-					} else if (is_takeoff_sp) {
-						pos_sp_triplet.current.type = position_setpoint_s::SETPOINT_TYPE_TAKEOFF;
+                                        } else if (is_takeoff_sp) {
+                                                pos_sp_triplet.current.type = position_setpoint_s::SETPOINT_TYPE_TAKEOFF;
 
-					} else if (is_land_sp) {
-						pos_sp_triplet.current.type = position_setpoint_s::SETPOINT_TYPE_LAND;
+                                        } else if (is_land_sp) {
+                                                pos_sp_triplet.current.type = position_setpoint_s::SETPOINT_TYPE_LAND;
 
-					} else if (is_idle_sp) {
-						pos_sp_triplet.current.type = position_setpoint_s::SETPOINT_TYPE_IDLE;
+                                        } else if (is_idle_sp) {
+                                                pos_sp_triplet.current.type = position_setpoint_s::SETPOINT_TYPE_IDLE;
 
-					} else {
-						pos_sp_triplet.current.type = position_setpoint_s::SETPOINT_TYPE_POSITION;
-					}
+                                        } else {
+                                                pos_sp_triplet.current.type = position_setpoint_s::SETPOINT_TYPE_POSITION;
+                                        }
 
-*/					/* set the local pos values */
-/*					if (!offboard_control_mode.ignore_position) {
-						pos_sp_triplet.current.position_valid = true;
-						pos_sp_triplet.current.x = set_position_target_local_ned.x;
-						pos_sp_triplet.current.y = set_position_target_local_ned.y;
-						pos_sp_triplet.current.z = set_position_target_local_ned.z;
+                                        /* set the local pos values */
+                                        if (!offboard_control_mode.ignore_position) {
+                                                pos_sp_triplet.current.position_valid = true;
+                                                pos_sp_triplet.current.x = set_position_target_local_ned.x;
+                                                pos_sp_triplet.current.y = set_position_target_local_ned.y;
+                                                pos_sp_triplet.current.z = set_position_target_local_ned.z;
 
-					} else {
-						pos_sp_triplet.current.position_valid = false;
-					}
+                                        } else {
+                                                pos_sp_triplet.current.position_valid = false;
+                                        }
 
-*/					/* set the local vel values */
-/*					if (!offboard_control_mode.ignore_velocity) {
-						pos_sp_triplet.current.velocity_valid = true;
-						pos_sp_triplet.current.vx = set_position_target_local_ned.vx;
-						pos_sp_triplet.current.vy = set_position_target_local_ned.vy;
-						pos_sp_triplet.current.vz = set_position_target_local_ned.vz;
+                                        /* set the local vel values */
+                                        if (!offboard_control_mode.ignore_velocity) {
+                                                pos_sp_triplet.current.velocity_valid = true;
+                                                pos_sp_triplet.current.vx = set_position_target_local_ned.vx;
+                                                pos_sp_triplet.current.vy = set_position_target_local_ned.vy;
+                                                pos_sp_triplet.current.vz = set_position_target_local_ned.vz;
 
-						pos_sp_triplet.current.velocity_frame =
-							set_position_target_local_ned.coordinate_frame;
+                                                pos_sp_triplet.current.velocity_frame =
+                                                        set_position_target_local_ned.coordinate_frame;
 
-					} else {
-						pos_sp_triplet.current.velocity_valid = false;
-					}
+                                        } else {
+                                                pos_sp_triplet.current.velocity_valid = false;
+                                        }
 
-					if (!offboard_control_mode.ignore_alt_hold) {
-						pos_sp_triplet.current.alt_valid = true;
-						pos_sp_triplet.current.z = set_position_target_local_ned.z;
+                                        if (!offboard_control_mode.ignore_alt_hold) {
+                                                pos_sp_triplet.current.alt_valid = true;
+                                                pos_sp_triplet.current.z = set_position_target_local_ned.z;
 
-					} else {
-						pos_sp_triplet.current.alt_valid = false;
-					}
+                                        } else {
+                                                pos_sp_triplet.current.alt_valid = false;
+                                        }
 
-*/					/* set the local acceleration values if the setpoint type is 'local pos' and none
+                                        /* set the local acceleration values if the setpoint type is 'local pos' and none
                                          * of the accelerations fields is set to 'ignore' */
-/*					if (!offboard_control_mode.ignore_acceleration_force) {
-						pos_sp_triplet.current.acceleration_valid = true;
-						pos_sp_triplet.current.a_x = set_position_target_local_ned.afx;
-						pos_sp_triplet.current.a_y = set_position_target_local_ned.afy;
-						pos_sp_triplet.current.a_z = set_position_target_local_ned.afz;
-						pos_sp_triplet.current.acceleration_is_force =
-							is_force_sp;
+                                        if (!offboard_control_mode.ignore_acceleration_force) {
+                                                pos_sp_triplet.current.acceleration_valid = true;
+                                                pos_sp_triplet.current.a_x = set_position_target_local_ned.afx;
+                                                pos_sp_triplet.current.a_y = set_position_target_local_ned.afy;
+                                                pos_sp_triplet.current.a_z = set_position_target_local_ned.afz;
+                                                pos_sp_triplet.current.acceleration_is_force =
+                                                        is_force_sp;
 
-					} else {
-						pos_sp_triplet.current.acceleration_valid = false;
-					}
+                                        } else {
+                                                pos_sp_triplet.current.acceleration_valid = false;
+                                        }
 
-*/					/* set the yaw sp value */
-/*					if (!offboard_control_mode.ignore_attitude) {
-						pos_sp_triplet.current.yaw_valid = true;
-						pos_sp_triplet.current.yaw = set_position_target_local_ned.yaw;
+                                        /* set the yaw sp value */
+                                        if (!offboard_control_mode.ignore_attitude) {
+                                                pos_sp_triplet.current.yaw_valid = true;
+                                                pos_sp_triplet.current.yaw = set_position_target_local_ned.yaw;
 
-					} else {
-						pos_sp_triplet.current.yaw_valid = false;
-					}
+                                        } else {
+                                                pos_sp_triplet.current.yaw_valid = false;
+                                        }
 
-*/					/* set the yawrate sp value */
-/*					if (!offboard_control_mode.ignore_bodyrate) {
-						pos_sp_triplet.current.yawspeed_valid = true;
-						pos_sp_triplet.current.yawspeed = set_position_target_local_ned.yaw_rate;
+                                        /* set the yawrate sp value */
+                                        if (!offboard_control_mode.ignore_bodyrate) {
+                                                pos_sp_triplet.current.yawspeed_valid = true;
+                                                pos_sp_triplet.current.yawspeed = set_position_target_local_ned.yaw_rate;
 
-					} else {
-						pos_sp_triplet.current.yawspeed_valid = false;
-					}
+                                        } else {
+                                                pos_sp_triplet.current.yawspeed_valid = false;
+                                        }
 
-					//XXX handle global pos setpoints (different MAV frames)
+                                        //XXX handle global pos setpoints (different MAV frames)
 
-					if (_pos_sp_triplet_pub == nullptr) {
-						_pos_sp_triplet_pub = orb_advertise(ORB_ID(position_setpoint_triplet),
-										    &pos_sp_triplet);
+                                        if (_pos_sp_triplet_pub == nullptr) {
+                                                _pos_sp_triplet_pub = orb_advertise(ORB_ID(position_setpoint_triplet),
+                                                                                    &pos_sp_triplet);
 
-					} else {
-						orb_publish(ORB_ID(position_setpoint_triplet), _pos_sp_triplet_pub,
-							    &pos_sp_triplet);
-					}
+                                        } else {
+                                                orb_publish(ORB_ID(position_setpoint_triplet), _pos_sp_triplet_pub,
+                                                            &pos_sp_triplet);
+                                        }
+
                                 }
 
-			}
+                        }
 
-		}
+                }
         }
-*/}
+}
 
 void
 MavlinkReceiver::handle_message_set_actuator_control_target(mavlink_message_t *msg)
@@ -2586,6 +2579,140 @@ void MavlinkReceiver::handle_message_debug(mavlink_message_t *msg)
 	}
 }
 
+void
+MavlinkReceiver::handle_message_uuv_one_pos(mavlink_message_t *msg)
+{
+    mavlink_uuv_one_pos_t man;
+    mavlink_msg_uuv_one_pos_decode(msg, &man);
+
+
+    struct uuv_one_pose_s pos = {};
+
+    pos.timestamp = hrt_absolute_time();
+    pos.x = man.x;
+    pos.y = man.y;
+    pos.z = man.z;
+    pos.q[0] = man.q[0];
+    pos.q[1] = man.q[1];
+    pos.q[2] = man.q[2];
+    pos.q[3] = man.q[3];
+
+    if (_uuv_one_pos_pub == nullptr) {
+        _uuv_one_pos_pub = orb_advertise(ORB_ID(uuv_one_pose), &pos);
+
+    } else {
+        orb_publish(ORB_ID(uuv_one_pose), _uuv_one_pos_pub, &pos);
+    }
+
+}
+
+void
+MavlinkReceiver::handle_message_uuv_two_pos(mavlink_message_t *msg)
+{
+
+    mavlink_uuv_two_pos_t man;
+    mavlink_msg_uuv_two_pos_decode(msg, &man);
+
+
+    struct uuv_two_pose_s pos = {};
+
+    pos.timestamp = hrt_absolute_time();
+    pos.x = man.x;
+    pos.y = man.y;
+    pos.z = man.z;
+    pos.q[0] = man.q[0];
+    pos.q[1] = man.q[1];
+    pos.q[2] = man.q[2];
+    pos.q[3] = man.q[3];
+
+    if (_uuv_two_pos_pub == nullptr) {
+        _uuv_two_pos_pub = orb_advertise(ORB_ID(uuv_two_pose), &pos);
+
+    } else {
+        orb_publish(ORB_ID(uuv_two_pose), _uuv_two_pos_pub, &pos);
+    }
+
+}
+
+void
+MavlinkReceiver::handle_message_uuv_three_pos(mavlink_message_t *msg)
+{
+    mavlink_uuv_three_pos_t man;
+    mavlink_msg_uuv_three_pos_decode(msg, &man);
+
+
+    struct uuv_three_pose_s pos = {};
+
+    pos.timestamp = hrt_absolute_time();
+    pos.x = man.x;
+    pos.y = man.y;
+    pos.z = man.z;
+    pos.q[0] = man.q[0];
+    pos.q[1] = man.q[1];
+    pos.q[2] = man.q[2];
+    pos.q[3] = man.q[3];
+
+    if (_uuv_three_pos_pub == nullptr) {
+        _uuv_three_pos_pub = orb_advertise(ORB_ID(uuv_three_pose), &pos);
+
+    } else {
+        orb_publish(ORB_ID(uuv_three_pose), _uuv_three_pos_pub, &pos);
+    }
+
+}
+
+void
+MavlinkReceiver::handle_message_uuv_four_pos(mavlink_message_t *msg)
+{
+    mavlink_uuv_four_pos_t man;
+    mavlink_msg_uuv_four_pos_decode(msg, &man);
+
+
+    struct uuv_four_pose_s pos = {};
+
+    pos.timestamp = hrt_absolute_time();
+    pos.x = man.x;
+    pos.y = man.y;
+    pos.z = man.z;
+    pos.q[0] = man.q[0];
+    pos.q[1] = man.q[1];
+    pos.q[2] = man.q[2];
+    pos.q[3] = man.q[3];
+
+    if (_uuv_four_pos_pub == nullptr) {
+        _uuv_four_pos_pub = orb_advertise(ORB_ID(uuv_four_pose), &pos);
+
+    } else {
+        orb_publish(ORB_ID(uuv_four_pose), _uuv_four_pos_pub, &pos);
+    }
+}
+
+void
+MavlinkReceiver::handle_message_uuv_five_pos(mavlink_message_t *msg)
+{
+    mavlink_uuv_five_pos_t man;
+    mavlink_msg_uuv_five_pos_decode(msg, &man);
+
+
+    struct uuv_five_pose_s pos = {};
+
+    pos.timestamp = hrt_absolute_time();
+    pos.x = man.x;
+    pos.y = man.y;
+    pos.z = man.z;
+    pos.q[0] = man.q[0];
+    pos.q[1] = man.q[1];
+    pos.q[2] = man.q[2];
+    pos.q[3] = man.q[3];
+
+    if (_uuv_five_pos_pub == nullptr) {
+        _uuv_five_pos_pub = orb_advertise(ORB_ID(uuv_five_pose), &pos);
+
+    } else {
+        orb_publish(ORB_ID(uuv_five_pose), _uuv_five_pos_pub, &pos);
+    }
+}
+
 void MavlinkReceiver::handle_message_debug_vect(mavlink_message_t *msg)
 {
 	mavlink_debug_vect_t debug_msg;
@@ -2782,6 +2909,7 @@ void MavlinkReceiver::print_status()
 {
 
 }
+
 
 void *MavlinkReceiver::start_helper(void *context)
 {
