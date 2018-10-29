@@ -69,16 +69,30 @@ PARAM_DEFINE_FLOAT(UUV_LEAFO_ORDER, 2.0f);
  * Follow in Chain or all one leader
  *
  * @min 0.0
- * @increment 0.01
+ * @max 1.0
+ * @increment 1.0
  * @reboot_required true 0
  * @group UUV_LEAFO
  */
 PARAM_DEFINE_FLOAT(UUV_LEAFO_IC, 1.0f);
 
+
 /**
- * Proportional Speed Gain
+ * Start While
  * 
- * To manage same distance on LEAFOle
+ * Should Run
+ *
+ * @min 0.0
+ * @max 1.0
+ * @increment 1
+ * @group UUV_LEAFO
+ */
+PARAM_DEFINE_FLOAT(UUV_LEAFO_SR, 0.0f);
+
+/**
+ * Proportional Gain SPeed
+ * 
+ * t
  *
  * @min 0.0
  * @increment 0.01
@@ -118,6 +132,16 @@ PARAM_DEFINE_FLOAT(UUV_LEAFO_KYI, 0.0f);
  * @group UUV_LEAFO
  */
 PARAM_DEFINE_FLOAT(UUV_LEAFO_KYD, 0.0f); 
+/**
+ * Trajectory lead set
+ * 
+ * Traj
+ *
+ * @min 0.0
+ * @increment 0.01
+ * @group UUV_LEAFO
+ */
+PARAM_DEFINE_FLOAT(UUV_LEAFO_KT, 3.0f); 
 
 /**
  * X-Value of desired Trajectory

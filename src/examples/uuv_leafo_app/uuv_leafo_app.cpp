@@ -48,6 +48,7 @@
 #include <string.h>
 #include <math.h>
 #include <time.h>
+#include <unistd.h>
 
 // drivers
 #include <drivers/drv_hrt.h>
@@ -107,10 +108,12 @@ private:
          param_t NUM;               // Number of Vehicles
          param_t Order;             // Ordering Number of Vehicle
          param_t IfChain;           // Chain or all follow first
+         param_t shouldRun;         // Start While
          param_t Ksp;               // Speed constand
          param_t Kpy;               // proportional Gain Yaw_rate
          param_t Kiy;               // integrator Gain Yaw_rate
          param_t Kdy;               // differentiator Gain Yaw_rate
+         param_t Kt;                // Trajectory drirection point
          param_t T_x;               // desired Trajectory
          param_t T_y;
          param_t T_z;
@@ -123,10 +126,12 @@ private:
          int NUM;
          int Order;
          int IfChain;
+         int shouldRun;
          double Ksp;                // speed constant
          double Kpy;                // proportional Gain Yaw_rate
          double Kiy;                // integrator Gain Yaw_rate
          double Kdy;                // differentiator Gain Yaw_rate
+         double Kt;
          double T_x;                // desired Trajectory
          double T_y;
          double T_z;
@@ -172,10 +177,12 @@ UUVLeaFo::UUVLeaFo():
     _params_handles.NUM         = param_find("UUV_LEAFO_NUM");       // Number of Vehicles in Cicle
     _params_handles.Order       = param_find("UUV_LEAFO_ORDER");     // Ordering Number of Vehicle
     _params_handles.IfChain     = param_find("UUV_LEAFO_IC");
+    _params_handles.shouldRun   = param_find("UUV_LEAFO_SR");
     _params_handles.Ksp         = param_find("UUV_LEAFO_KSP");       // speed constant
     _params_handles.Kpy         = param_find("UUV_LEAFO_KYP");       // proportional Gain Yaw_rate
     _params_handles.Kiy         = param_find("UUV_LEAFO_KYI");       // integrator Gain Yaw_rate
     _params_handles.Kdy         = param_find("UUV_LEAFO_KYD");       // differentiator Gain Yaw_rate
+    _params_handles.Kt          = param_find("UUV_LEAFO_KT");
     _params_handles.T_x         = param_find("UUV_LEAFO_T_X");       // desired Trqajectory
     _params_handles.T_y         = param_find("UUV_LEAFO_T_Y");
     _params_handles.T_z         = param_find("UUV_LEAFO_T_Z");
@@ -225,6 +232,8 @@ int UUVLeaFo::parameters_update()
         _params.Order = v;
         param_get(_params_handles.IfChain, &v);
         _params.Order = v;
+        param_get(_params_handles.shouldRun, &v);
+        _params.shouldRun = v;
         param_get(_params_handles.Ksp, &v);
         _params.Ksp = v;
         param_get(_params_handles.Kpy, &v);
@@ -233,6 +242,8 @@ int UUVLeaFo::parameters_update()
         _params.Kiy = v;
         param_get(_params_handles.Kdy, &v);
         _params.Kdy = v;
+        param_get(_params_handles.Kt, &v);
+        _params.Kt = v;
         param_get(_params_handles.T_x, &v);
         _params.T_x = v;
         param_get(_params_handles.T_y, &v);
@@ -434,7 +445,6 @@ UUVLeaFo::task_main()
         double alpha=0;
         double beta=0;
         double r2x=0;
-        double Kt = 3;
         double Ldelr=0;
         double theta_act=0;//, theta_bef=0;
         double theta_target;
@@ -476,18 +486,20 @@ UUVLeaFo::task_main()
         matrix::Vector3<double> T4(0, 0, 0);       // Position Vektor of other Boats
         matrix::Vector3<double> T5(0, 0, 0);       // Position Vektor of other Boats
 
-        matrix::Vector3<double> zero(0, 0, 0);     // zero vector
-
-
         matrix::Vector3<double> RT(0,0,0);        // nearest point on Tajectory in global coordinates
         matrix::Vector3<double> Rtarget(0,0,0);   // Target vector
         matrix::Vector3<double> rctr(0,0,0);      // direction to Rtarget from boat in global coordinates
         matrix::Vector3<double> delr(0,0,0);      // controll help
 
+        while(_params.shouldRun==0){
+            parameters_update();
+            dt1=hrt_absolute_time()/(double)1000000;
+        }
 
+        while(!_task_should_exit && _params.shouldRun==1) {
 
-        while(!_task_should_exit) {
-                sleep(0.500);
+            usleep(50000);
+
                 // next step
                 dt0 = dt1;
                 dt1=hrt_absolute_time()/(double)1000000; // actual steptime
@@ -625,7 +637,7 @@ UUVLeaFo::task_main()
                     RT(2)=_params.Toff_x + r2x*sin(beta);
 
                     // controller target Point
-                    Rtarget = RT+Kt*T;
+                    Rtarget = RT+_params.Kt*T;
 
                     // controller direction Vector
                     rctr=Rtarget-r;
@@ -636,20 +648,33 @@ UUVLeaFo::task_main()
 
                 }else{
                     if(_params.IfChain==0){
-                        rctr = T1-r;
+                        switch(_params.Order){
+                            case 2:
+                                rctr = T1-T2;
+                                break;
+                            case 3:
+                                rctr = T1-T3;
+                                break;
+                            case 4:
+                                rctr = T1-T4;
+                                break;
+                            case 5:
+                                rctr = T1-T5;
+                                break;
+                        }
                     }else{
                         switch(_params.Order){
                             case 2:
-                                rctr = T1-r;
+                                rctr = T1-T2;
                                 break;
                             case 3:
-                                rctr = T2-r;
+                                rctr = T2-T3;
                                 break;
                             case 4:
-                                rctr = T3-r;
+                                rctr = T3-T4;
                                 break;
                             case 5:
-                                rctr = T4-r;
+                                rctr = T4-T5;
                                 break;
 
                         }
@@ -677,17 +702,12 @@ UUVLeaFo::task_main()
                 If += f1*(dt1-dt0);
                 Iro+= ro1*(dt1-dt0);
 
-                PX4_INFO("E:\t%8.4f\t%8.4f\t%8.4f\t%8.4f",
+                PX4_INFO("E:\t%8.4f\t%8.4f",
                          (double)e1,
-                         (double)e0,
-                         (double)de,
-                         (double)Ie);
-                PX4_INFO("PAR:\t%8.4f\t%8.4f\t%8.4f",
-                         (double)_params.Kpy,
-                         (double) _params.Kdy,
-                         (double) _params.Kiy);
-
-
+                         (double)e0);
+                PX4_INFO("E:\t%8.4f\t%8.4f",
+                         (double)dt1,
+                         (double)dt0);
 
                 nu = _params.Kpy*e1+_params.Kiy*Ie+_params.Kdy*de;
                 mu = Kpf*f1+Kif*If+Kdf*df;
@@ -704,10 +724,10 @@ UUVLeaFo::task_main()
                 _actuators.control[0] = ro*0;         // roll
                 _actuators.control[1] = p*0;           // pitch
                 _actuators.control[2] = y;           // yaw
-                _actuators.control[3] = t;		// thrust
+                _actuators.control[3] = _params.Ksp+0*t;		// thrust
                 actuators_publish();
-
-                parameter_update_poll();
+                parameters_update();
+                //parameter_update_poll();
         }
 
 

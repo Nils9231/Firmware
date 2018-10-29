@@ -73,7 +73,19 @@ PARAM_DEFINE_FLOAT(UUV_CIRC_ORDER, 2.0f);
  * @reboot_required true 0
  * @group UUV_CIRC
  */
-PARAM_DEFINE_FLOAT(UUV_CIRC_KCIRC, 1.0f);
+PARAM_DEFINE_FLOAT(UUV_CIRC_KCIRCP, 1.0f);
+
+/**
+ * differential Gain of Midllepoint error
+ * 
+ * influence of midllepoint error on target yaw_rate
+ *
+ * @min 0.0
+ * @increment 0.01
+ * @reboot_required true 0
+ * @group UUV_CIRC
+ */
+PARAM_DEFINE_FLOAT(UUV_CIRC_KCIRCD, 1.0f);
 
 
 /**
@@ -86,6 +98,28 @@ PARAM_DEFINE_FLOAT(UUV_CIRC_KCIRC, 1.0f);
  * @group UUV_CIRC
  */
 PARAM_DEFINE_FLOAT(UUV_CIRC_KDES, 0.0f);
+
+/**
+ * Bool for aequidistance
+ * 
+ * T
+ *
+ * @min 0.0
+ * @increment 0.01
+ * @group UUV_CIRC
+ */
+PARAM_DEFINE_FLOAT(UUV_CIRC_TAEQ, 0.0f);
+
+/**
+ * starts while
+ * 
+ * Influence on Middlepoint error of desired Middlepoint
+ *
+ * @min 0.0
+ * @increment 0.01
+ * @group UUV_CIRC
+ */
+PARAM_DEFINE_FLOAT(UUV_CIRC_SR, 0.0f);
 
 /**
  * constant yaw_rate control input
