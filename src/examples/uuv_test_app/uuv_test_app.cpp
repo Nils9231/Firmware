@@ -74,15 +74,22 @@ int uuv_test_app_main(int argc, char *argv[])
     /* limit the update rate to 5 Hz */
     orb_set_interval(actuator_outputs_sub_fd, 200);
 
+    int actuator_controls_sub_fd = orb_subscribe(ORB_ID(actuator_controls));
+    /* limit the update rate to 5 Hz */
+    orb_set_interval(actuator_controls_sub_fd, 200);
+
+
     /* advertise to actuator_control topic */
     struct actuator_controls_s act;
     memset(&act, 0, sizeof(act));
     orb_advert_t act_pub = orb_advertise(ORB_ID(actuator_controls_0), &act);
 
     /* one could wait for multiple topics with this technique, just using one here */
-    px4_pollfd_struct_t fds[1] = {};
+    px4_pollfd_struct_t fds[2] = {};
     fds[0].fd = actuator_outputs_sub_fd;
     fds[0].events = POLLIN;
+    fds[1].fd = actuator_controls_sub_fd;
+    fds[1].events = POLLIN;
 
 
     int error_counter = 0;
@@ -111,9 +118,9 @@ int uuv_test_app_main(int argc, char *argv[])
 
                     if (fds[0].revents & POLLIN) {
                             /* obtained data for the second file descriptor */
-                            struct actuator_outputs_s actout;
+                            //struct actuator_outputs_s actout;
                             /* copy sensors raw data into local buffer */
-                            orb_copy(ORB_ID(actuator_outputs), actuator_outputs_sub_fd, &actout);
+                            /*orb_copy(ORB_ID(actuator_outputs), actuator_outputs_sub_fd, &actout);
 
                             a=actout.output[0];
                             b=actout.output[1];
@@ -126,6 +133,23 @@ int uuv_test_app_main(int argc, char *argv[])
                                      (double)b,
                                      (double)c,
                                      (double)d);
+                            */
+                            struct actuator_controls_s actout;
+                            /* copy sensors raw data into local buffer */
+                            orb_copy(ORB_ID(actuator_outputs), actuator_controls_sub_fd, &actout);
+
+                            a=actout.control[0];
+                            b=actout.control[1];
+                            c=actout.control[2];
+                            d=actout.control[3];
+
+
+                            PX4_INFO("out:\t%8.4f\t%8.4f\t%8.4f\t%8.4f",
+                                     (double)a,
+                                     (double)b,
+                                     (double)c,
+                                     (double)d);
+
 
 
                             }

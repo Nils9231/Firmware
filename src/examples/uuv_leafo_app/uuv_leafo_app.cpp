@@ -231,7 +231,7 @@ int UUVLeaFo::parameters_update()
         param_get(_params_handles.Order, &v);
         _params.Order = v;
         param_get(_params_handles.IfChain, &v);
-        _params.Order = v;
+        _params.IfChain = v;
         param_get(_params_handles.shouldRun, &v);
         _params.shouldRun = v;
         param_get(_params_handles.Ksp, &v);
@@ -579,7 +579,7 @@ UUVLeaFo::task_main()
 
                                 struct uuv_one_pose_s uuv1pos;
                                 orb_copy(ORB_ID(uuv_one_pose), _uuv_one_pose_sub, &uuv1pos);
-                                T1(0)=uuv1pos.y+1;
+                                T1(0)=uuv1pos.y;
                                 T1(1)=uuv1pos.x;
                                 T1(2)=-uuv1pos.z;
                                 struct uuv_two_pose_s uuv2pos;
@@ -589,17 +589,17 @@ UUVLeaFo::task_main()
                                 T2(2)=-uuv2pos.z;
                                 struct uuv_three_pose_s uuv3pos;
                                 orb_copy(ORB_ID(uuv_three_pose), _uuv_three_pose_sub, &uuv3pos);
-                                T3(0)=uuv3pos.y+1;
+                                T3(0)=uuv3pos.y+2;
                                 T3(1)=uuv3pos.x;
                                 T3(2)=-uuv3pos.z;
                                 struct uuv_four_pose_s uuv4pos;
                                 orb_copy(ORB_ID(uuv_four_pose), _uuv_four_pose_sub, &uuv4pos);
-                                T4(0)=uuv4pos.y+1;
+                                T4(0)=uuv4pos.y+3;
                                 T4(1)=uuv4pos.x;
                                 T4(2)=-uuv4pos.z;
                                 struct uuv_five_pose_s uuv5pos;
                                 orb_copy(ORB_ID(uuv_five_pose), _uuv_five_pose_sub, &uuv5pos);
-                                T5(0)=uuv5pos.y+1;
+                                T5(0)=uuv5pos.y+4;
                                 T5(1)=uuv5pos.x;
                                 T5(2)=-uuv5pos.z;
 
@@ -614,6 +614,7 @@ UUVLeaFo::task_main()
                 theta_act=atan2(x_B(1),x_B(0));                                     // angle between global and Boat X-Axis
 
                 if (_params.Order==1){
+                    PX4_INFO("LEADER");
 
                     // Actualize Trajectory
                     T0(0)= _params.T_x;
@@ -634,7 +635,7 @@ UUVLeaFo::task_main()
                     // nearest Point on Trajectory in global coordinates
                     RT(0)=_params.Toff_x + r2x*cos(alpha)*cos(beta);
                     RT(1)=_params.Toff_y + r2x*sin(alpha)*cos(beta);
-                    RT(2)=_params.Toff_x + r2x*sin(beta);
+                    RT(2)=_params.Toff_z + r2x*sin(beta);
 
                     // controller target Point
                     Rtarget = RT+_params.Kt*T;
@@ -644,9 +645,10 @@ UUVLeaFo::task_main()
 
                     // nearest distance Vector to trajectory
                     delr = RT-r;                                                        // Vector
-                    Ldelr = sqrt(pow(delr(0),2)+pow(delr(1),2)+pow(delr(2),2));         // Distance
+                    Ldelr = sqrt(pow(delr(0),2)+pow(delr(1),2));//+pow(delr(2),2));         // Distance
 
-                }else{
+                }else if(_params.Order>1){
+                    PX4_INFO("Follower");
                     if(_params.IfChain==0){
                         switch(_params.Order){
                             case 2:
@@ -680,7 +682,7 @@ UUVLeaFo::task_main()
                         }
                     }
                     // Distance to leader
-                    Ldelr = sqrt(pow(rctr(0),2)+pow(rctr(1),2)+pow(rctr(2),2));         // Distance
+                    Ldelr = sqrt(pow(rctr(0),2)+pow(rctr(1),2));//+pow(rctr(2),2));         // Distance
                 }
 
                 // Controller Target Angles of rctr
@@ -702,13 +704,6 @@ UUVLeaFo::task_main()
                 If += f1*(dt1-dt0);
                 Iro+= ro1*(dt1-dt0);
 
-                PX4_INFO("E:\t%8.4f\t%8.4f",
-                         (double)e1,
-                         (double)e0);
-                PX4_INFO("E:\t%8.4f\t%8.4f",
-                         (double)dt1,
-                         (double)dt0);
-
                 nu = _params.Kpy*e1+_params.Kiy*Ie+_params.Kdy*de;
                 mu = Kpf*f1+Kif*If+Kdf*df;
                 eta = Kpro*ro1+Kiro*Iro+Kdro*dro;
@@ -718,13 +713,22 @@ UUVLeaFo::task_main()
                 ro= eta;//(eta-nu*x_B(2));
                 p= mu;//mu-nu*y_B(2);
                 y= -nu;//-nu*-z_B(2);
-                t= (_params.Ksp*(1+Ldelr));//ro/3+p/3+y/3;
+                if (_params.Order==1){
+                    t= _params.Ksp;
+                    //t = (_params.Ksp*(1+Ldelr));//ro/3+p/3+y/3;
+                }else{
+                    if (Ldelr<1){
+                        t=_params.Ksp*(0.25+0.1*Ldelr);
+                    }else{
+                        t = _params.Ksp*(0.25+0.2*Ldelr);
+                    }
+                }
 
                 // Give actuator input to the HippoC
                 _actuators.control[0] = ro*0;         // roll
                 _actuators.control[1] = p*0;           // pitch
                 _actuators.control[2] = y;           // yaw
-                _actuators.control[3] = _params.Ksp+0*t;		// thrust
+                _actuators.control[3] = t;		// thrust
                 actuators_publish();
                 parameters_update();
                 //parameter_update_poll();

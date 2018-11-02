@@ -122,6 +122,7 @@ set(config_module_list
 	examples/uuv_leafo_app
 	examples/uuv_circ_app
 	examples/uuv_test_app
+	examples/uuv_mixer_balancer
 
 	#
 	# Segway

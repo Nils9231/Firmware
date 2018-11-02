@@ -3,7 +3,7 @@
 # @name Hippocampus UUV
 #
 
-sh /etc/init.d/rc.uuv_defaults
+sh /etc/init.d/rc.uuv_sim_defaults
 
 if [ $AUTOCNF = yes ]
 then

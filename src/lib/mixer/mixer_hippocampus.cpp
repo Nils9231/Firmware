@@ -92,7 +92,7 @@ UUVMixer *
 UUVMixer::from_text(Mixer::ControlCallback control_cb, uintptr_t cb_handle, const char *buf, unsigned &buflen)
 {
         MultirotorGeometry geometry = MultirotorGeometry::MAX_GEOMETRY;
-        char geomname[8]= HippoC;
+        char geomname[8]= "HippoC";
         int s[4];
         int used;
 
@@ -221,7 +221,7 @@ UUVMixer::mix(float *outputs, unsigned space)
                 // boosting can only be positive when min_out < 0.0
                 // roll_pitch_scale is reduced accordingly
                 if (boost > 0.0f) {
-                        roll_pitch_scale = thrust / (thrust - min_out);
+                        yaw_pitch_scale = thrust / (thrust - min_out);
                         boost = 0.0f;
                 }
         }

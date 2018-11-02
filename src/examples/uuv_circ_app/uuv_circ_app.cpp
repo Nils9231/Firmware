@@ -504,6 +504,7 @@ UUVCirc::task_main()
         double Iro=0;               // integrated Error eta
         //double u;                   // second order steerer
         double yawspd=0;            // yawspeed
+        double dt = 0;
 
 
 
@@ -884,10 +885,23 @@ UUVCirc::task_main()
                 ro= eta;//(eta-nu*x_B(2));
                 p= mu;//mu-nu*y_B(2);
                 //y = Kold*(y0+y1+y2+y3+y4)+psi;//-nu*-z_B(2);
-                y = _params.Yconst +psi;//-nu*-z_B(2);
+                //-nu*-z_B(2);
                 if(_params.Taeq==1){
-                    t = _params.Ksp*(1+0.1*(sin(uuv1yaw+(_params.Order-1)*(6.283185307/_params.NUM))-sin(uuv0yaw)));
+                    //dt =sin(uuv1yaw+(_params.Order-1)*(6.283185307/_params.NUM))-sin(uuv0yaw);
+                    if(uuv1yaw<0){
+                        dt = uuv1yaw+(_params.Order-1)*(6.283185307/_params.NUM)-uuv0yaw;
+                    }else{
+                        dt = uuv1yaw-(_params.Order-1)*(6.283185307/_params.NUM)-uuv0yaw;
+                    }
+
+
+                    t = _params.Ksp*(1.3-0.15*sqrt(dt*dt));
+                    //PX4_INFO("dt:\t%8.4f",
+                    //         (double)dt);
+                    y = (_params.Yconst +psi)/(t/_params.Ksp);
+
                 }else{
+                    y = _params.Yconst +psi;
                     t= _params.Ksp;
                 }
 

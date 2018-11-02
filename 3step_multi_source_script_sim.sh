@@ -1,4 +1,4 @@
-make posix_sitl_default 
+#make posix_sitl_default 
 source Tools/setup_gazebo.bash $(pwd) $(pwd)/build_posix_sitl_default
 export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:$(pwd)
 export ROS_PACKAGE_PATH=$ROS_PACKAGE_PATH:/home/hippoc/src/sitl_gazebo

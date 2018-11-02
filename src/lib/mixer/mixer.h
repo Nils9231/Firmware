@@ -848,7 +848,7 @@ private:
 	saturation_status _saturation_status;
 
 	unsigned			_rotor_count;
-	const Rotor			*_rotors;
+	const MultirotorMixer::Rotor			*_rotors;
 
 	float 				*_outputs_prev = nullptr;
 
