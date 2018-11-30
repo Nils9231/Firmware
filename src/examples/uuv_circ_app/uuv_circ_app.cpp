@@ -640,7 +640,7 @@ UUVCirc::task_main()
                                 uuv1yaw=atan2(R1(0,0),R1(1,0));
                                 struct uuv_two_pose_s uuv2pos;
                                 orb_copy(ORB_ID(uuv_two_pose), _uuv_two_pose_sub, &uuv2pos);
-                                T2(0)=uuv2pos.y+1;
+                                T2(0)=uuv2pos.y;//+1;
                                 T2(1)=uuv2pos.x;
                                 T2(2)=-uuv2pos.z;
                                 matrix::Quatf uuv2q_att(uuv2pos.q);     // control_state is frequently updated
@@ -648,7 +648,7 @@ UUVCirc::task_main()
                                 uuv2yaw=atan2(R2(0,0),R2(1,0));
                                 struct uuv_three_pose_s uuv3pos;
                                 orb_copy(ORB_ID(uuv_three_pose), _uuv_three_pose_sub, &uuv3pos);
-                                T3(0)=uuv3pos.y+2;
+                                T3(0)=uuv3pos.y;//+2;
                                 T3(1)=uuv3pos.x;
                                 T3(2)=-uuv3pos.z;
                                 matrix::Quatf uuv3q_att(uuv3pos.q);     // control_state is frequently updated
@@ -656,7 +656,7 @@ UUVCirc::task_main()
                                 uuv3yaw=atan2(R3(0,0),R3(1,0));
                                 struct uuv_four_pose_s uuv4pos;
                                 orb_copy(ORB_ID(uuv_four_pose), _uuv_four_pose_sub, &uuv4pos);
-                                T4(0)=uuv4pos.y+3;
+                                T4(0)=uuv4pos.y;//+3;
                                 T4(1)=uuv4pos.x;
                                 T4(2)=-uuv4pos.z;
                                 matrix::Quatf uuv4q_att(uuv4pos.q);     // control_state is frequently updated
@@ -664,7 +664,7 @@ UUVCirc::task_main()
                                 uuv4yaw=atan2(R4(0,0),R4(1,0));
                                 struct uuv_five_pose_s uuv5pos;
                                 orb_copy(ORB_ID(uuv_five_pose), _uuv_five_pose_sub, &uuv5pos);
-                                T5(0)=uuv5pos.y+4;
+                                T5(0)=uuv5pos.y;//+4;
                                 T5(1)=uuv5pos.x;
                                 T5(2)=-uuv5pos.z;
                                 matrix::Quatf uuv5q_att(uuv5pos.q);     // control_state is frequently updated
@@ -887,18 +887,18 @@ UUVCirc::task_main()
                 //y = Kold*(y0+y1+y2+y3+y4)+psi;//-nu*-z_B(2);
                 //-nu*-z_B(2);
                 if(_params.Taeq==1){
-                    //dt =sin(uuv1yaw+(_params.Order-1)*(6.283185307/_params.NUM))-sin(uuv0yaw);
-                    if(uuv1yaw<0){
+                    dt =sin(uuv1yaw+(_params.Order-1)*(6.283185307/_params.NUM))-sin(uuv0yaw);
+                    /*if(uuv1yaw<0){
                         dt = uuv1yaw+(_params.Order-1)*(6.283185307/_params.NUM)-uuv0yaw;
                     }else{
                         dt = uuv1yaw-(_params.Order-1)*(6.283185307/_params.NUM)-uuv0yaw;
-                    }
+                    }*/
 
 
-                    t = _params.Ksp*(1.3-0.15*sqrt(dt*dt));
+                    t = _params.Ksp*(1.3-0.15*dt);
                     //PX4_INFO("dt:\t%8.4f",
                     //         (double)dt);
-                    y = (_params.Yconst +psi)/(t/_params.Ksp);
+                    y = (_params.Yconst +psi);//)/(t/_params.Ksp);
 
                 }else{
                     y = _params.Yconst +psi;

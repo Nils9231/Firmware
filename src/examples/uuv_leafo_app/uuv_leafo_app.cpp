@@ -584,22 +584,22 @@ UUVLeaFo::task_main()
                                 T1(2)=-uuv1pos.z;
                                 struct uuv_two_pose_s uuv2pos;
                                 orb_copy(ORB_ID(uuv_two_pose), _uuv_two_pose_sub, &uuv2pos);
-                                T2(0)=uuv2pos.y+1;
+                                T2(0)=uuv2pos.y;//+1;
                                 T2(1)=uuv2pos.x;
                                 T2(2)=-uuv2pos.z;
                                 struct uuv_three_pose_s uuv3pos;
                                 orb_copy(ORB_ID(uuv_three_pose), _uuv_three_pose_sub, &uuv3pos);
-                                T3(0)=uuv3pos.y+2;
+                                T3(0)=uuv3pos.y;//+2;
                                 T3(1)=uuv3pos.x;
                                 T3(2)=-uuv3pos.z;
                                 struct uuv_four_pose_s uuv4pos;
                                 orb_copy(ORB_ID(uuv_four_pose), _uuv_four_pose_sub, &uuv4pos);
-                                T4(0)=uuv4pos.y+3;
+                                T4(0)=uuv4pos.y;//+3;
                                 T4(1)=uuv4pos.x;
                                 T4(2)=-uuv4pos.z;
                                 struct uuv_five_pose_s uuv5pos;
                                 orb_copy(ORB_ID(uuv_five_pose), _uuv_five_pose_sub, &uuv5pos);
-                                T5(0)=uuv5pos.y+4;
+                                T5(0)=uuv5pos.y;//+4;
                                 T5(1)=uuv5pos.x;
                                 T5(2)=-uuv5pos.z;
 
